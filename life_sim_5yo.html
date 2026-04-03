@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>THE LIFE - 5歳・黎明期編</title>
+    <style>
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #f0f2f5; display: flex; justify-content: center; padding: 20px; }
+        #game-container { background: white; width: 600px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); overflow: hidden; }
+        #header { background: #ff7e5f; color: white; padding: 20px; text-align: center; }
+        #status-bar { display: flex; justify-content: space-around; background: #fff5f5; padding: 10px; border-bottom: 1px solid #eee; font-size: 0.9em; }
+        #log-area { height: 300px; overflow-y: auto; padding: 20px; border-bottom: 1px solid #eee; background: #fafafa; }
+        #situation { padding: 20px; font-weight: bold; line-height: 1.6; color: #333; }
+        #choices { padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+        button { padding: 12px; border: none; border-radius: 8px; background: #4a90e2; color: white; cursor: pointer; transition: 0.2s; font-size: 1em; }
+        button:hover { background: #357abd; }
+        .narration { color: #666; font-style: italic; font-size: 0.85em; margin-top: 10px; border-left: 3px solid #ccc; padding-left: 10px; }
+        .day-info { font-weight: bold; color: #ff7e5f; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="header">
+        <h1>THE LIFE <small>Age 5</small></h1>
+        <div id="day-display" class="day-info">4月1日 AM</div>
+    </div>
+    
+    <div id="status-bar">
+        <div>体力: <span id="st-hp">10</span></div>
+        <div>知力: <span id="st-int">10</span></div>
+        <div>感性: <span id="st-sen">10</span></div>
+        <div>社交: <span id="st-soc">10</span></div>
+        <div>精神: <span id="st-mnt">10</span></div>
+    </div>
+
+    <div id="log-area">
+        <div id="situation">「おたんじょうびおめでとう！」まどから おひさまの ひかりが さしこんでる。きょうから ぼくは、５さい。</div>
+    </div>
+
+    <div id="choices">
+        </div>
+</div>
+
+<script>
+// --- ゲームデータと初期設定 ---
+let state = {
+    day: 1,
+    isPM: false,
+    params: { hp: 10, int: 10, sen: 10, soc: 10, mnt: 10 },
+    hidden: { diet: 0, habit_loop: 0, personality: 0 },
+    logs: []
+};
+
+const GROWTH_RATE = 2.0; // 5歳の成長倍率
+
+// 5歳児向けイベント・選択肢データベース
+const events = {
+    morning: [
+        { text: "きょうのごはん、ピーマンはいってる。どうする？", options: [
+            { label: "がんばって たべる", effect: { hp: 2, mnt: 1 }, hidden: { diet: 1 }, nar: "苦味を知ることは、世界の複雑さを知ることだ。" },
+            { label: "ぺってだす！", effect: { mnt: -1 }, hidden: { diet: -2 }, nar: "本能に従うか、理性を育てるか。最初の分岐点である。" },
+            { label: "おもちゃで あそぶ", effect: { sen: 2 }, hidden: { habit_loop: 1 }, nar: "食事よりも優先される衝動。それは好奇心の萌芽か、無秩序への一歩か。" }
+        ]},
+        { text: "ようちえんで おともだちが つみきを つかってる。", options: [
+            { label: "「かして」っていう", effect: { soc: 2, mnt: 1 }, nar: "社会契約の第一歩は、意志の表明から始まる。" },
+            { label: "むりやり うばう！", effect: { hp: 1, soc: -2 }, hidden: { personality: -1 }, nar: "略奪は短期的利益を生むが、孤独という代償を伴う。" },
+            { label: "ひとりで すなばにいく", effect: { sen: 1, int: 1 }, hidden: { personality: 1 }, nar: "孤独を愛する才能は、時に深い思索を生む。" }
+        ]}
+    ],
+    evening: [
+        { text: "おねむの じかんだけど、まだ あそびたい。", options: [
+            { label: "すぐ ねる", effect: { hp: 3, mnt: 1 }, hidden: { diet: 1 }, nar: "休息を支配する者は、自己の肉体を支配する。" },
+            { label: "こっそり おもちゃで あそぶ", effect: { sen: 2, hp: -2 }, hidden: { habit_loop: 2 }, nar: "禁じられた夜の時間は、感性を研ぎ澄ませるが身を削る。" },
+            { label: "「えほん よんで」とせがむ", effect: { int: 2, sen: 1 }, nar: "知識への渇望は、他者のリソースを消費することで満たされる。" }
+        ]}
+    ]
+};
+
+function updateUI() {
+    document.getElementById('st-hp').innerText = Math.floor(state.params.hp);
+    document.getElementById('st-int').innerText = Math.floor(state.params.int);
+    document.getElementById('st-sen').innerText = Math.floor(state.params.sen);
+    document.getElementById('st-soc').innerText = Math.floor(state.params.soc);
+    document.getElementById('st-mnt').innerText = Math.floor(state.params.mnt);
+    
+    const timeStr = state.isPM ? "PM" : "AM";
+    document.getElementById('day-display').innerText = `4月${state.day}日 ${timeStr}`;
+}
+
+function selectOption(idx, pool) {
+    const option = pool[idx];
+    
+    // パラメータ変動（成長倍率適用）
+    for (let key in option.effect) {
+        state.params[key] += option.effect[key] * GROWTH_RATE;
+    }
+    // 隠しパラメータ
+    if (option.hidden) {
+        for (let key in option.hidden) {
+            state.hidden[key] += option.hidden[key];
+        }
+    }
+
+    // ログ追加
+    const logArea = document.getElementById('log-area');
+    const newEntry = document.createElement('div');
+    newEntry.innerHTML = `<div class='narration'><strong>${option.label}を選択：</strong><br>${option.nar}</div>`;
+    logArea.appendChild(newEntry);
+    logArea.scrollTop = logArea.scrollHeight;
+
+    // 進行
+    if (state.isPM) {
+        state.day++;
+        state.isPM = false;
+    } else {
+        state.isPM = true;
+    }
+
+    if (state.day > 30) {
+        finishGame();
+    } else {
+        nextTurn();
+    }
+}
+
+function nextTurn() {
+    updateUI();
+    const situationDiv = document.getElementById('situation');
+    const choiceDiv = document.getElementById('choices');
+    choiceDiv.innerHTML = "";
+
+    const pool = state.isPM ? events.evening : events.morning;
+    const event = pool[Math.floor(Math.random() * pool.length)];
+
+    situationDiv.innerText = event.text;
+
+    event.options.forEach((opt, index) => {
+        const btn = document.createElement('button');
+        btn.innerText = opt.label;
+        btn.onclick = () => selectOption(index, event.options);
+        choiceDiv.appendChild(btn);
+    });
+}
+
+function finishGame() {
+    document.getElementById('game-container').innerHTML = `
+        <div id='header'><h1>人生の1ヶ月が終了</h1></div>
+        <div style='padding:20px;'>
+            <p>5歳の1ヶ月が終わりました。あなたの基礎が作られました。</p>
+            <ul>
+                <li>偏食度: ${state.hidden.diet < 0 ? "高い（将来の健康に不安）" : "低い"}</li>
+                <li>性格: ${state.hidden.personality < 0 ? "独立心が強い" : "社会性が高い"}</li>
+            </ul>
+            <button onclick='location.reload()'>もう一度 5歳からやり直す</button>
+        </div>
+    `;
+}
+
+// 初回起動
+nextTurn();
+
+</script>
+</body>
+</html>
