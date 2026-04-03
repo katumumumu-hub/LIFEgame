@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>THE LIFE - 5yo Edition</title>
+    <title>THE LIFE - Age 5</title>
     <style>
         :root {
             --primary: #FF6B6B;
             --secondary: #4ECDC4;
-            --bg: #F7F9FC;
+            --accent: #FFE66D;
+            --bg: #F0F3F7;
             --text: #2D3436;
             --card: #FFFFFF;
         }
@@ -16,141 +17,145 @@
         body {
             font-family: 'Hiragino Sans', 'Meiryo', sans-serif;
             background-color: var(--bg);
-            color: var(--text);
             margin: 0;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
+            height: 100vh;
+            overflow: hidden;
         }
 
         #app-container {
             width: 100%;
-            max-width: 400px;
-            height: 90vh;
+            max-width: 414px;
+            height: 100%;
+            max-height: 896px;
             background: var(--card);
-            border-radius: 30px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
             display: flex;
             flex-direction: column;
-            overflow: hidden;
             position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
         }
 
-        /* ヘッダーエリア */
+        /* 起動時オーバーレイ（名前・性別設定） */
+        #setup-overlay {
+            position: absolute;
+            inset: 0;
+            background: var(--primary);
+            color: white;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            text-align: center;
+        }
+
+        input, select {
+            width: 80%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 10px;
+            border: none;
+            font-size: 1em;
+        }
+
+        /* ヘッダー */
         #header {
             background: var(--primary);
             color: white;
-            padding: 20px;
-            text-align: center;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .date-badge {
-            background: rgba(255,255,255,0.2);
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 0.9em;
-            font-weight: bold;
-        }
+        .user-info { font-size: 0.8em; font-weight: bold; }
+        .date-info { text-align: right; }
+        .date-badge { background: rgba(255,255,255,0.2); padding: 2px 10px; border-radius: 10px; font-size: 0.9em; }
 
-        #calendar-event {
-            font-size: 0.8em;
-            margin-top: 8px;
-            color: #FFF3E0;
-            min-height: 1.2em;
-        }
-
-        /* ステータスバー */
-        #status-grid {
+        /* ステータス */
+        #status-bar {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 5px;
-            padding: 15px;
             background: #FFF5F5;
+            padding: 10px 0;
             font-size: 0.7em;
             text-align: center;
+            border-bottom: 1px solid #eee;
         }
-
         .stat-item b { display: block; font-size: 1.2em; color: var(--primary); }
 
-        /* メイン表示エリア */
-        #main-display {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-        }
+        /* メインエリア */
+        #main-content { flex: 1; padding: 20px; overflow-y: auto; position: relative; }
+        #event-tag { color: var(--primary); font-weight: bold; font-size: 0.9em; margin-bottom: 5px; }
+        #situation-text { font-size: 1.15em; line-height: 1.6; }
 
-        #situation-text {
-            font-size: 1.1em;
-            line-height: 1.6;
-            margin-bottom: 20px;
-            color: #444;
-        }
-
-        #narration-box {
-            font-size: 0.85em;
-            color: #636e72;
-            background: #f1f2f6;
-            padding: 15px;
-            border-radius: 12px;
-            border-left: 4px solid var(--secondary);
-            margin-bottom: 20px;
-            display: none;
-        }
-
-        /* 選択肢ボタン */
-        #choice-container {
-            padding: 20px;
-            background: #fff;
-            border-top: 1px solid #eee;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
+        /* 選択肢 */
+        #choice-area { padding: 20px; display: flex; flex-direction: column; gap: 10px; }
         .choice-btn {
-            background: white;
-            border: 2px solid var(--primary);
-            color: var(--primary);
-            padding: 15px;
-            border-radius: 15px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-align: left;
+            background: white; border: 2px solid var(--primary); color: var(--primary);
+            padding: 15px; border-radius: 15px; font-weight: bold; cursor: pointer; text-align: left;
         }
+        .choice-btn:hover { background: var(--primary); color: white; }
 
-        .choice-btn:hover {
-            background: var(--primary);
-            color: white;
+        /* ナビゲーション（下部メニュー） */
+        #nav-bar {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            border-top: 1px solid #eee;
+            background: #fff;
         }
+        .nav-item {
+            padding: 15px; border: none; background: none; cursor: pointer;
+            font-size: 0.8em; color: #666; transition: 0.2s;
+        }
+        .nav-item:hover { background: #f9f9f9; color: var(--primary); }
 
-        /* プログレスバー */
-        #progress-wrapper {
-            height: 4px;
-            background: #eee;
+        /* モーダル表示 */
+        .modal {
+            position: absolute; inset: 0; background: white; z-index: 50;
+            display: none; flex-direction: column; padding: 20px;
         }
-        #progress-bar {
-            height: 100%;
-            background: var(--secondary);
-            width: 0%;
-            transition: width 0.3s;
-        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
+        .close-btn { font-size: 1.5em; cursor: pointer; background: none; border: none; }
+        .modal-body { flex: 1; overflow-y: auto; }
+
+        /* ログのスタイル */
+        .log-entry { margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 8px; font-size: 0.9em; border-left: 3px solid var(--secondary); }
+        .log-date { font-weight: bold; color: #666; font-size: 0.8em; }
+
+        /* カレンダーのスタイル */
+        .cal-item { display: flex; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .cal-date { width: 50px; font-weight: bold; color: var(--primary); }
     </style>
 </head>
 <body>
 
 <div id="app-container">
-    <div id="header">
-        <div class="date-badge" id="date-label">4月1日 AM</div>
-        <div id="calendar-event">🎂 5歳の誕生日</div>
+    <div id="setup-overlay">
+        <h1>THE LIFE</h1>
+        <p>あなたの人生を始めましょう</p>
+        <input type="text" id="input-name" placeholder="なまえをいれてね" maxlength="10">
+        <select id="input-gender">
+            <option value="おとこのこ">おとこのこ</option>
+            <option value="おんなのこ">おんなのこ</option>
+        </select>
+        <button class="choice-btn" style="width:200px; text-align:center; margin-top:20px;" onclick="startGame()">人生をはじめる</button>
     </div>
 
-    <div id="progress-wrapper"><div id="progress-bar"></div></div>
+    <div id="header">
+        <div class="user-info">
+            <span id="display-name">---</span> (<span id="display-gender">---</span>)<br>
+            <small>5 years old</small>
+        </div>
+        <div class="date-info">
+            <div class="date-badge" id="display-date">4月1日 AM</div>
+        </div>
+    </div>
 
-    <div id="status-grid">
+    <div id="status-bar">
         <div class="stat-item">体<b><span id="st-hp">10</span></b></div>
         <div class="stat-item">知<b><span id="st-int">10</span></b></div>
         <div class="stat-item">感<b><span id="st-sen">10</span></b></div>
@@ -158,27 +163,56 @@
         <div class="stat-item">心<b><span id="st-mnt">10</span></b></div>
     </div>
 
-    <div id="main-display">
-        <div id="narration-box"></div>
+    <div id="main-content">
+        <div id="event-tag"></div>
         <div id="situation-text"></div>
     </div>
 
-    <div id="choice-container">
+    <div id="choice-area"></div>
+
+    <div id="nav-bar">
+        <button class="nav-item" onclick="showModal('calendar-modal')">📅 予定</button>
+        <button class="nav-item" onclick="showModal('log-modal')">📜 履歴</button>
+        <button class="nav-item" onclick="showModal('help-modal')">⚙️ 設定</button>
+    </div>
+
+    <div id="calendar-modal" class="modal">
+        <div class="modal-header">
+            <h3>4月のよてい</h3>
+            <button class="close-btn" onclick="closeModal()">×</button>
         </div>
+        <div class="modal-body" id="calendar-list"></div>
+    </div>
+
+    <div id="log-modal" class="modal">
+        <div class="modal-header">
+            <h3>これまでのあゆみ</h3>
+            <button class="close-btn" onclick="closeModal()">×</button>
+        </div>
+        <div class="modal-body" id="log-list"></div>
+    </div>
+
+    <div id="help-modal" class="modal">
+        <div class="modal-header">
+            <h3>設定</h3>
+            <button class="close-btn" onclick="closeModal()">×</button>
+        </div>
+        <div class="modal-body">
+            <p><strong>THE LIFE v1.0</strong></p>
+            <p>5歳から80歳までの人生をシミュレートするプロトタイプです。</p>
+            <button class="choice-btn" style="width:100%; text-align:center;" onclick="location.reload()">最初からやり直す</button>
+        </div>
+    </div>
 </div>
 
 <script>
-const GROWTH = 2.0;
 let state = {
-    day: 1,
-    isPM: false,
+    name: "", gender: "", day: 1, isPM: false,
     params: { hp: 10, int: 10, sen: 10, soc: 10, mnt: 10 },
-    hidden: { diet: 0, bad_habit: 0 },
-    lastNarration: ""
+    logs: []
 };
 
-// カレンダーイベントの定義
-const calendar = {
+const calendarEvents = {
     1: "🎂 5歳の誕生日",
     5: "🌸 幼稚園の入園式",
     8: "🍙 お花見遠足",
@@ -188,31 +222,56 @@ const calendar = {
     30: "📊 1ヶ月の成長確認"
 };
 
-const scenarios = {
+const scenarioData = {
     morning: [
         { q: "朝ごはん、嫌いな野菜が入ってる...", opts: [
-            { l: "目をつぶって食べる", e: {hp:2, mnt:2}, n: "克己心の芽生え。不快を乗り越える力が備わった。" },
-            { l: "絶対食べないと泣き叫ぶ", e: {mnt:-1, hp:1}, n: "自己主張の爆発。世界が自分の思い通りにならないことを学ぶ。" }
+            { l: "がんばって食べる", e: {hp:2, mnt:2}, n: "不快を乗り越える自制心を学んだ。" },
+            { l: "絶対に食べないと泣く", e: {mnt:-1, hp:1}, n: "強い自己主張は、時に孤立を招く。" }
         ]},
-        { q: "幼稚園でお友達が泣いているよ。", opts: [
-            { l: "「どうしたの？」と聞く", e: {soc:3, sen:1}, n: "共感性の萌芽。他者の痛みを認識し始めた。" },
-            { l: "遠くから眺める", e: {int:2, sen:1}, n: "観察眼の鋭化。社会を俯瞰で捉える性質が育つ。" }
+        { q: "ようちえんに行く時間だ！", opts: [
+            { l: "元気に「いってきます！」", e: {soc:2, hp:1}, n: "明るい挨拶は、社会を円滑にする。" },
+            { l: "ママの服をつかんで離さない", e: {sen:2}, n: "強い愛着。感受性が高まっている。" }
         ]}
     ],
     evening: [
-        { q: "お風呂から上がったら、パパがタバコを吸ってる。", opts: [
-            { l: "「いいにおい」と近づく", e: {sen:1, hp:-1}, h: {bad_habit:2}, n: "無垢な好奇心。有害なものへの心理的障壁が下がる。" },
-            { l: "「くさい！」と逃げる", e: {mnt:1}, h: {bad_habit:-1}, n: "本能的な拒絶。自己防衛本能が正常に機能している。" }
+        { q: "お風呂あがり。パパがタバコを吸ってる。", opts: [
+            { l: "「くさーい！」と逃げる", e: {mnt:1}, n: "健康への本能的な回避行動。" },
+            { l: "じーっと見てみる", e: {int:2, hp:-1}, n: "観察。悪癖への興味は知識の代償か。" }
         ]},
-        { q: "寝る前の読み聞かせ、何がいい？", opts: [
-            { l: "図鑑で動物を調べる", e: {int:3}, n: "知識の蓄積。論理的な世界への入り口に立った。" },
-            { l: "冒険の絵本を読んでもらう", e: {sen:3}, n: "想像力の飛躍。見えない世界を旅する力が宿る。" }
+        { q: "もう寝る時間だよ。", opts: [
+            { l: "すぐにお布団に入る", e: {hp:3}, n: "規則正しい生活は心身を安定させる。" },
+            { l: "「もっとあそぶ！」と騒ぐ", e: {sen:2, hp:-2}, n: "好奇心の暴走。夜の静寂が感性を研ぎ澄ます。" }
         ]}
     ]
 };
 
-function update() {
-    // UI Update
+function startGame() {
+    const nameInput = document.getElementById('input-name').value;
+    if(!nameInput) return alert("なまえをいれてね！");
+    
+    state.name = nameInput;
+    state.gender = document.getElementById('input-gender').value;
+    
+    document.getElementById('display-name').innerText = state.name;
+    document.getElementById('display-gender').innerText = state.gender;
+    document.getElementById('setup-overlay').style.display = "none";
+    
+    initCalendar();
+    render();
+}
+
+function initCalendar() {
+    const list = document.getElementById('calendar-list');
+    for(let d=1; d<=30; d++) {
+        const item = document.createElement('div');
+        item.className = 'cal-item';
+        item.innerHTML = `<div class="cal-date">4/${d}</div><div>${calendarEvents[d] || "通常の1日"}</div>`;
+        list.appendChild(item);
+    }
+}
+
+function render() {
+    // UI反映
     document.getElementById('st-hp').innerText = Math.floor(state.params.hp);
     document.getElementById('st-int').innerText = Math.floor(state.params.int);
     document.getElementById('st-sen').innerText = Math.floor(state.params.sen);
@@ -220,58 +279,66 @@ function update() {
     document.getElementById('st-mnt').innerText = Math.floor(state.params.mnt);
 
     const time = state.isPM ? "PM" : "AM";
-    document.getElementById('date-label').innerText = `4月${state.day}日 ${time}`;
-    document.getElementById('calendar-event').innerText = calendar[state.day] || "";
-    
-    document.getElementById('progress-bar').style.width = `${(state.day / 30) * 100}%`;
+    document.getElementById('display-date').innerText = `4月${state.day}日 ${time}`;
+    document.getElementById('event-tag').innerText = calendarEvents[state.day] || "";
 
-    if (state.lastNarration) {
-        const nBox = document.getElementById('narration-box');
-        nBox.innerText = state.lastNarration;
-        nBox.style.display = "block";
-    }
-
-    renderChoices();
-}
-
-function renderChoices() {
-    const container = document.getElementById('choice-container');
-    const sitText = document.getElementById('situation-text');
-    container.innerHTML = "";
-
-    const pool = state.isPM ? scenarios.evening : scenarios.morning;
+    // 選択肢生成
+    const choiceArea = document.getElementById('choice-area');
+    choiceArea.innerHTML = "";
+    const pool = state.isPM ? scenarioData.evening : scenarioData.morning;
     const scene = pool[Math.floor(Math.random() * pool.length)];
 
-    sitText.innerText = scene.q;
+    document.getElementById('situation-text').innerText = scene.q;
 
     scene.opts.forEach(opt => {
         const btn = document.createElement('button');
         btn.className = "choice-btn";
         btn.innerText = opt.l;
-        btn.onclick = () => {
-            // Apply effects
-            for(let key in opt.e) state.params[key] += opt.e[key] * GROWTH;
-            if(opt.h) for(let key in opt.h) state.hidden[key] += opt.h[key];
-            
-            state.lastNarration = opt.n;
-
-            // Advance time
-            if (state.isPM) { state.day++; state.isPM = false; }
-            else { state.isPM = true; }
-
-            if (state.day > 30) {
-                alert("1ヶ月が終了しました！あなたの成長を確認しましょう。");
-                location.reload();
-            } else {
-                update();
-            }
-        };
-        container.appendChild(btn);
+        btn.onclick = () => handleChoice(opt);
+        choiceArea.appendChild(btn);
     });
 }
 
-// Start Game
-update();
+function handleChoice(opt) {
+    // パラメータ適用
+    for(let k in opt.e) state.params[k] += opt.e[k] * 2; // 5歳成長倍率
+
+    // ログ記録
+    const log = {
+        date: `4月${state.day}日 ${state.isPM?'PM':'AM'}`,
+        action: opt.l,
+        narration: opt.n
+    };
+    state.logs.unshift(log); // 最新を上に
+    updateLogUI();
+
+    // 進行
+    if(state.isPM) { state.day++; state.isPM = false; }
+    else { state.isPM = true; }
+
+    if(state.day > 30) {
+        alert("1ヶ月が終了！");
+        location.reload();
+    } else {
+        render();
+    }
+}
+
+function updateLogUI() {
+    const list = document.getElementById('log-list');
+    list.innerHTML = state.logs.map(l => `
+        <div class="log-entry">
+            <div class="log-date">${l.date}</div>
+            <div><strong>${l.action}</strong></div>
+            <div style="font-size:0.85em; color:#666; margin-top:5px;">${l.narration}</div>
+        </div>
+    `).join('');
+}
+
+function showModal(id) { document.getElementById(id).style.display = "flex"; }
+function closeModal() {
+    document.querySelectorAll('.modal').forEach(m => m.style.display = "none");
+}
 </script>
 </body>
 </html>
