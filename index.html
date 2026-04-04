@@ -3,14 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>THE LIFE - 5yo</title>
+    <title>THE LIFE - Core</title>
     <style>
         :root {
             --primary: #FF9AA2;
             --primary-dark: #FF7B84;
             --secondary: #B5EAD7;
-            --secondary-dark: #8BD4B9;
-            --accent: #FFDAC1;
             --bg: #FFFDF9;
             --text: #5D514E;
             --card: #FFFFFF;
@@ -46,26 +44,21 @@
         .stat-item { flex: 1; text-align: center; font-size: 0.7em; }
         .stat-item b { display: block; font-size: 1.2em; color: var(--primary-dark); }
 
-        /* メインスクロールエリア */
+        /* メインエリア */
         #main-content { flex: 1; padding: 0 20px; overflow-y: auto; display: flex; flex-direction: column; }
 
-        /* 主人公表示エリア（追加分） */
-        #hero-display-area {
-            width: 100%;
-            min-height: 100px; /* ここに将来顔グラなどが入る */
-            margin-top: 10px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background: rgba(255, 218, 193, 0.1); /* 開発用に薄く色付け */
-            border-radius: 15px;
-            border: 2px dashed var(--accent);
+        /* 背景画像表示（外部画像管理用） */
+        #bg-display {
+            width: 100%; height: 160px; margin-top: 10px;
+            border-radius: 15px; background-size: cover; background-position: center;
+            border: 2px solid #F1F2F6; position: relative; flex-shrink: 0;
         }
-        #hero-display-area::after {
-            content: "主人公表示スペース";
-            font-size: 0.8em;
-            color: var(--accent);
+
+        /* プレイヤー画像表示（外部画像管理用） */
+        #player-img {
+            width: 80px; height: 80px; position: absolute;
+            bottom: 10px; left: 50%; transform: translateX(-50%);
+            background-size: contain; background-repeat: no-repeat;
         }
 
         .section-title { font-weight: bold; text-align: center; margin: 15px 0; font-size: 1.1em; color: #887C79; }
@@ -73,42 +66,28 @@
         .category-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 15px; flex-shrink: 0; }
         .cat-btn {
             padding: 12px 2px; border: 3px solid #F1F2F6; border-radius: 18px; background: white;
-            cursor: pointer; font-weight: bold; color: #887C79; font-size: 0.85em; transition: 0.2s;
+            cursor: pointer; font-weight: bold; color: #887C79; font-size: 0.85em;
         }
         .cat-btn.active { border-color: var(--primary); color: var(--primary); background: #FFF5F5; }
 
-        /* 小項目ボタン（コンパクト化） */
         #sub-action-list { display: flex; flex-direction: column; gap: 8px; padding-bottom: 20px; }
-        .sub-btn {
-            padding: 12px 16px; border: 2px solid #F1F2F6; border-radius: 15px; background: #FDFEFE;
-            text-align: left; cursor: pointer; transition: 0.2s;
-        }
+        .sub-btn { padding: 15px; border: 2px solid #F1F2F6; border-radius: 15px; background: #FDFEFE; text-align: left; cursor: pointer; }
         .sub-btn b { font-size: 0.95em; color: var(--text); }
 
-        /* フッターナビ */
+        /* ナビ */
         #nav-bar { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid #EEE; background: #fff; flex-shrink: 0; }
         .nav-item { padding: 15px; border: none; background: none; cursor: pointer; font-size: 0.9em; color: #9B918F; font-weight: bold; }
 
         /* モーダル */
-        .modal {
-            position: absolute; inset: 0; background: var(--bg); z-index: 50;
-            display: none; flex-direction: column; padding: 20px;
-        }
+        .modal { position: absolute; inset: 0; background: var(--bg); z-index: 50; display: none; flex-direction: column; padding: 20px; }
         .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--secondary); padding-bottom: 10px; flex-shrink: 0; }
-        .modal-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-top: 10px; }
-
+        .modal-body { flex: 1; overflow-y: auto; padding-top: 10px; }
         .list-item { padding: 15px 10px; border-bottom: 1px solid #EEE; }
 
-        /* 演出オーバーレイ */
-        #loading-overlay {
-            position: absolute; inset: 0; background: rgba(255,255,255,0.95);
-            z-index: 100; display: none; flex-direction: column;
-            justify-content: center; align-items: center; font-weight: bold; color: var(--primary-dark);
-        }
-        .spinner { width: 40px; height: 40px; border: 4px solid var(--accent); border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 10px; }
+        #loading-overlay { position: absolute; inset: 0; background: rgba(255,255,255,0.9); z-index: 100; display: none; flex-direction: column; justify-content: center; align-items: center; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #FFE6E6; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* 初期設定 */
         #setup-overlay { position: absolute; inset: 0; background: var(--primary); color: white; z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px; }
     </style>
 </head>
@@ -116,38 +95,40 @@
 
 <div id="app-container">
     <div id="setup-overlay">
-        <h1 style="margin-bottom:20px;">✨ THE LIFE</h1>
-        <input type="text" id="input-name" style="width:85%; padding:15px; border-radius:15px; border:none; margin-bottom:10px;" placeholder="おなまえ" maxlength="10">
-        <select id="input-gender" style="width:85%; padding:15px; border-radius:15px; border:none; margin-bottom:20px;">
-            <option value="おとこのこ">おとこのこ 👦</option>
-            <option value="おんなのこ">おんなのこ 👧</option>
+        <h1>✨ THE LIFE</h1>
+        <input type="text" id="input-name" style="width:80%; padding:15px; border-radius:15px; border:none; margin-bottom:10px;" placeholder="なまえ" maxlength="10">
+        <select id="input-gender" style="width:80%; padding:15px; border-radius:15px; border:none; margin-bottom:20px;">
+            <option value="boy">おとこのこ 👦</option>
+            <option value="girl">おんなのこ 👧</option>
         </select>
         <button onclick="startGame()" style="padding:15px 40px; border-radius:30px; border:none; background:white; color:var(--primary); font-weight:bold;">はじめる</button>
     </div>
 
     <div id="loading-overlay">
         <div class="spinner"></div>
-        <div id="loading-text">じかんが すすんでいるよ...</div>
+        <div id="loading-text" style="margin-top:10px; font-weight:bold; color:var(--primary-dark);"></div>
     </div>
 
     <div id="header">
         <div class="header-top">
             <div class="user-info"><span id="display-name">---</span> (<span id="display-gender">---</span>)</div>
-            <div class="date-badge" id="display-date">4月1日(水) AM</div>
+            <div class="date-badge" id="display-date">---</div>
         </div>
-        <div class="age-detail" id="display-age">5歳 0ヶ月 1週 1日</div>
+        <div class="age-detail" id="display-age">---</div>
     </div>
 
     <div id="status-bar">
-        <div class="stat-item">体力<b><span id="st-hp">10</span></b></div>
-        <div class="stat-item">知力<b><span id="st-int">10</span></b></div>
-        <div class="stat-item">感性<b><span id="st-sen">10</span></b></div>
-        <div class="stat-item">社交<b><span id="st-soc">10</span></b></div>
-        <div class="stat-item">精神<b><span id="st-mnt">10</span></b></div>
+        <div class="stat-item">体力<b><span id="st-hp">0</span></b></div>
+        <div class="stat-item">知力<b><span id="st-int">0</span></b></div>
+        <div class="stat-item">感性<b><span id="st-sen">0</span></b></div>
+        <div class="stat-item">社交<b><span id="st-soc">0</span></b></div>
+        <div class="stat-item">精神<b><span id="st-mnt">0</span></b></div>
     </div>
 
     <div id="main-content">
-        <div id="hero-display-area"></div>
+        <div id="bg-display">
+            <div id="player-img"></div>
+        </div>
 
         <div class="section-title">✨ きょうは なにをする？ ✨</div>
         <div class="category-grid">
@@ -165,106 +146,108 @@
     </div>
 
     <div id="calendar-modal" class="modal">
-        <div class="modal-header"><h3>📅 4月のよてい</h3><button onclick="closeModal()" style="border:none; background:none; font-size:1.5em;">×</button></div>
+        <div class="modal-header"><h3>📅 よてい</h3><button onclick="closeModal()" style="border:none; background:none; font-size:1.5em;">×</button></div>
         <div class="modal-body" id="calendar-list"></div>
     </div>
     <div id="log-modal" class="modal">
         <div class="modal-header"><h3>📖 きろく</h3><button onclick="closeModal()" style="border:none; background:none; font-size:1.5em;">×</button></div>
         <div class="modal-body" id="log-list"></div>
     </div>
-    <div id="help-modal" class="modal">
-        <div class="modal-header"><h3>⚙️ せってい</h3><button onclick="closeModal()" style="border:none; background:none; font-size:1.5em;">×</button></div>
-        <div class="modal-body"><button onclick="location.reload()" style="width:100%; padding:15px; border-radius:15px; border:none; background:var(--primary); color:white; font-weight:bold;">最初からやり直す</button></div>
-    </div>
 </div>
 
 <script>
 let state = {
-    name: "", gender: "", day: 1, isPM: false,
+    name: "", gender: "", age: 5, day: 1, isPM: false,
     params: { hp: 10, int: 10, sen: 10, soc: 10, mnt: 10 },
-    logs: []
+    logs: [],
+    actions: {}, // JSONから読み込む
+    events: {}   // JSONから読み込む
 };
 
 const weekDays = ["日", "月", "火", "水", "木", "金", "土"];
-const calendarEvents = { 1: "🎂 誕生日", 5: "🌸 入園式", 8: "🌳 遠足", 15: "🏥 検診", 20: "🎨 絵画展", 29: "🎏 昭和の日" };
 
-const actions = {
-    study: {
-        subs: [
-            { l: "ひらがな・カタカナ", e: {int:3, mnt:1}, d: "文字をなぞって言葉を覚えた！" },
-            { l: "かずの かぞえっこ", e: {int:4, mnt:1}, d: "10まで上手に数えられた。" },
-            { l: "えいごの おうた", e: {sen:2, soc:2, int:1}, d: "英語の歌を楽しく歌った。" },
-            { l: "ずかんを よむ", e: {int:3, sen:1}, d: "新しい知識を吸収した。" },
-            { l: "めいろ・パズル", e: {int:2, mnt:3}, d: "粘り強く考えて完成させた！" }
-        ]
-    },
-    play: {
-        subs: [
-            { l: "おりがみ・工作", e: {sen:4, mnt:1}, d: "素敵な作品ができあがった。" },
-            { l: "ぬりえ・おえかき", e: {sen:5}, d: "画用紙いっぱいに絵を描いた。" },
-            { l: "おままごと", e: {soc:4, sen:1}, d: "役になりきって楽しく遊んだ。" },
-            { l: "おそとで かけっこ", e: {hp:5, soc:1}, d: "公園を元気に走り回った！" },
-            { l: "つみき・ブロック", e: {int:2, sen:3}, d: "高い塔を崩さずに作れた。" }
-        ]
-    },
-    rest: {
-        subs: [
-            { l: "ぐっすり おひるね", e: {hp:6, mnt:2}, d: "夢を見てぐっすり眠った。" },
-            { l: "ぼーっと 空をみる", e: {sen:2, mnt:3}, d: "流れる雲をじっと眺めた。" },
-            { l: "おやつを たべる", e: {hp:1, soc:2, mnt:2}, d: "おやつを食べてニコニコになった。" },
-            { l: "ママに 甘える", e: {mnt:4, soc:1}, d: "たっぷり抱っこしてもらった。" },
-            { l: "おもちゃの おかたづけ", e: {mnt:3, int:1}, d: "使ったものを綺麗に片づけた。" }
-        ]
+// --- データの読み込み ---
+async function loadGameData(season) {
+    try {
+        const [actRes, evtRes] = await Promise.all([
+            fetch(`./date/${season}.json`),
+            fetch(`./event/${season}.json`)
+        ]);
+        state.actions = await actRes.json();
+        state.events = await evtRes.json();
+        console.log("Data loaded:", season);
+    } catch (e) {
+        console.error("Failed to load data:", e);
     }
-};
+}
 
-function startGame() {
+async function startGame() {
     const n = document.getElementById('input-name').value;
-    if(!n) return alert("おなまえをいれてね！");
+    if(!n) return alert("なまえをいれてね！");
+    
     state.name = n;
     state.gender = document.getElementById('input-gender').value;
+    
+    // Season1データの読み込み
+    await loadGameData('seasonone');
+    
     document.getElementById('display-name').innerText = state.name;
-    document.getElementById('display-gender').innerText = state.gender;
+    document.getElementById('display-gender').innerText = state.gender === 'boy' ? 'おとこのこ' : 'おんなのこ';
     document.getElementById('setup-overlay').style.display = "none";
-    initCalendar();
+    
+    updateVisuals();
+    initCalendarUI();
     selectCat('study', document.getElementById('btn-study'));
     render();
+}
+
+// 季節や状況に合わせて画像を変更
+function updateVisuals() {
+    const bg = document.getElementById('bg-display');
+    const player = document.getElementById('player-img');
+    
+    // 画像パスの例（images/haikei/5yo_spring.png などを用意）
+    bg.style.backgroundImage = `url('./images/haikei/age5_room.png')`;
+    player.style.backgroundImage = `url('./images/prayer/${state.gender}_5yo.png')`;
 }
 
 function render() {
     for (let k in state.params) document.getElementById('st-'+k).innerText = Math.floor(state.params[k]);
     const wd = weekDays[(state.day + 2) % 7];
     document.getElementById('display-date').innerText = `4月${state.day}日(${wd}) ${state.isPM?'PM':'AM'}`;
-    const weeks = Math.floor((state.day - 1) / 7) + 1;
-    const days = ((state.day - 1) % 7) + 1;
-    document.getElementById('display-age').innerText = `5歳 0ヶ月 ${weeks}週 ${days}日`;
+    document.getElementById('display-age').innerText = `${state.age}歳 0ヶ月 1週 ${((state.day-1)%7)+1}日`;
 }
 
 function selectCat(cat, btn) {
     currentCat = cat;
     document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
+    
     const list = document.getElementById('sub-action-list');
-    list.innerHTML = actions[cat].subs.map((s, i) => `
+    const subActions = state.actions[cat] || [];
+    
+    list.innerHTML = subActions.map((s, i) => `
         <button class="sub-btn" onclick="doAction(${i})">
-            <b>${s.l}</b>
+            <b>${s.label}</b>
         </button>
     `).join('');
 }
 
 function doAction(idx) {
-    const sub = actions[currentCat].subs[idx];
+    const sub = state.actions[currentCat][idx];
     const overlay = document.getElementById('loading-overlay');
-    document.getElementById('loading-text').innerText = `${sub.l} をしているよ...`;
+    document.getElementById('loading-text').innerText = `${sub.label} 中...`;
     overlay.style.display = "flex";
 
     setTimeout(() => {
-        for(let k in sub.e) state.params[k] += sub.e[k];
-        state.logs.unshift({ date: document.getElementById('display-date').innerText, act: sub.l, nar: sub.d });
+        for(let k in sub.effect) state.params[k] += sub.effect[k];
+        state.logs.unshift({ date: document.getElementById('display-date').innerText, act: sub.label, nar: sub.desc });
+        
         if(state.isPM) { state.day++; state.isPM = false; } else { state.isPM = true; }
+        
         overlay.style.display = "none";
-        if(state.day > 30) { alert("1ヶ月終了！"); location.reload(); }
-        else { render(); updateLogUI(); }
+        render();
+        updateLogUI();
     }, 600);
 }
 
@@ -274,12 +257,13 @@ function updateLogUI() {
     `).join('');
 }
 
-function initCalendar() {
+function initCalendarUI() {
     const list = document.getElementById('calendar-list');
     list.innerHTML = "";
     for(let d=1; d<=30; d++){
         const wd = weekDays[(d + 2) % 7];
-        list.innerHTML += `<div class="list-item"><b>4/${d}(${wd})</b> - ${calendarEvents[d] || "---"}</div>`;
+        const ev = state.events.calendar[d] || "---";
+        list.innerHTML += `<div class="list-item"><b>4/${d}(${wd})</b> - ${ev}</div>`;
     }
 }
 
