@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>THE LIFE - Core</title>
+    <title>THE LIFE - Life Simulation Core</title>
     <style>
         :root {
             --primary: #FF9AA2;
@@ -47,29 +47,39 @@
         /* メインエリア */
         #main-content { flex: 1; padding: 0 20px; overflow-y: auto; display: flex; flex-direction: column; }
 
-        /* 背景画像表示（外部画像管理用） */
+        /* 画像表示エリア */
         #bg-display {
             width: 100%; height: 160px; margin-top: 10px;
             border-radius: 15px; background-size: cover; background-position: center;
             border: 2px solid #F1F2F6; position: relative; flex-shrink: 0;
+            background-color: #f9f9f9;
         }
-
-        /* プレイヤー画像表示（外部画像管理用） */
         #player-img {
             width: 80px; height: 80px; position: absolute;
             bottom: 10px; left: 50%; transform: translateX(-50%);
             background-size: contain; background-repeat: no-repeat;
+            background-position: bottom center;
         }
 
         .section-title { font-weight: bold; text-align: center; margin: 15px 0; font-size: 1.1em; color: #887C79; }
 
-        .category-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 15px; flex-shrink: 0; }
+        /* カテゴリグリッド（動的にボタンが増減する） */
+        #category-grid { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 8px; 
+            margin-bottom: 15px; 
+            flex-shrink: 0; 
+        }
         .cat-btn {
             padding: 12px 2px; border: 3px solid #F1F2F6; border-radius: 18px; background: white;
             cursor: pointer; font-weight: bold; color: #887C79; font-size: 0.85em;
+            display: none; /* 初期状態は非表示 */
         }
         .cat-btn.active { border-color: var(--primary); color: var(--primary); background: #FFF5F5; }
+        .cat-btn.visible { display: block; } /* 年齢条件を満たすと表示 */
 
+        /* 小項目リスト */
         #sub-action-list { display: flex; flex-direction: column; gap: 8px; padding-bottom: 20px; }
         .sub-btn { padding: 15px; border: 2px solid #F1F2F6; border-radius: 15px; background: #FDFEFE; text-align: left; cursor: pointer; }
         .sub-btn b { font-size: 0.95em; color: var(--text); }
@@ -126,16 +136,22 @@
     </div>
 
     <div id="main-content">
-        <div id="bg-display">
-            <div id="player-img"></div>
-        </div>
+        <div id="bg-display"><div id="player-img"></div></div>
 
         <div class="section-title">✨ きょうは なにをする？ ✨</div>
-        <div class="category-grid">
-            <button class="cat-btn active" id="btn-study" onclick="selectCat('study', this)">📖 べんきょう</button>
-            <button class="cat-btn" id="btn-play" onclick="selectCat('play', this)">🧸 あそぶ</button>
-            <button class="cat-btn" id="btn-rest" onclick="selectCat('rest', this)">🛌 やすむ</button>
+        
+        <div id="category-grid">
+            <button class="cat-btn" id="cat-study" onclick="selectCat('study', this)">📖 べんきょう</button>
+            <button class="cat-btn" id="cat-exercise" onclick="selectCat('exercise', this)">🏃 うんどう</button>
+            <button class="cat-btn" id="cat-play" onclick="selectCat('play', this)">🧸 あそぶ</button>
+            <button class="cat-btn" id="cat-love" onclick="selectCat('love', this)">❤️ れんあい</button>
+            <button class="cat-btn" id="cat-work" onclick="selectCat('work', this)">💼 しごと</button>
+            <button class="cat-btn" id="cat-family" onclick="selectCat('family', this)">🏠 かてい</button>
+            <button class="cat-btn" id="cat-health" onclick="selectCat('health', this)">🩺 けんこう</button>
+            <button class="cat-btn" id="cat-hobby" onclick="selectCat('hobby', this)">🎨 しゅみ</button>
+            <button class="cat-btn" id="cat-rest" onclick="selectCat('rest', this)">🛌 やすむ</button>
         </div>
+
         <div id="sub-action-list"></div>
     </div>
 
@@ -156,59 +172,107 @@
 </div>
 
 <script>
+// --- ゲーム管理変数 ---
 let state = {
     name: "", gender: "", age: 5, day: 1, isPM: false,
     params: { hp: 10, int: 10, sen: 10, soc: 10, mnt: 10 },
     logs: [],
-    actions: {}, // JSONから読み込む
-    events: {}   // JSONから読み込む
+    actions: {}, // 外部JSON
+    events: {},  // 外部JSON
+    currentSeason: ""
 };
 
 const weekDays = ["日", "月", "火", "水", "木", "金", "土"];
 
-// --- データの読み込み ---
-async function loadGameData(season) {
-    try {
-        const [actRes, evtRes] = await Promise.all([
-            fetch(`./date/${season}.json`),
-            fetch(`./event/${season}.json`)
-        ]);
-        state.actions = await actRes.json();
-        state.events = await evtRes.json();
-        console.log("Data loaded:", season);
-    } catch (e) {
-        console.error("Failed to load data:", e);
-    }
-}
+// カテゴリ表示条件 (年齢によるフィルタ)
+const categoryConfig = {
+    study:    { min: 5,  max: 25 },
+    exercise: { min: 6,  max: 80 },
+    play:     { min: 5,  max: 18 },
+    love:     { min: 13, max: 80 },
+    work:     { min: 18, max: 70 },
+    family:   { min: 22, max: 80 },
+    health:   { min: 40, max: 80 },
+    hobby:    { min: 10, max: 80 },
+    rest:     { min: 5,  max: 80 }
+};
 
+// --- 初期化 & データロード ---
 async function startGame() {
     const n = document.getElementById('input-name').value;
     if(!n) return alert("なまえをいれてね！");
-    
     state.name = n;
     state.gender = document.getElementById('input-gender').value;
     
-    // Season1データの読み込み
-    await loadGameData('seasonone');
+    await updateSeasonData(); // データの読み込み
     
     document.getElementById('display-name').innerText = state.name;
     document.getElementById('display-gender').innerText = state.gender === 'boy' ? 'おとこのこ' : 'おんなのこ';
     document.getElementById('setup-overlay').style.display = "none";
     
+    refreshCategoryButtons();
     updateVisuals();
     initCalendarUI();
-    selectCat('study', document.getElementById('btn-study'));
+    
+    // 最初のカテゴリを選択状態にする
+    const firstBtn = document.querySelector('.cat-btn.visible');
+    if(firstBtn) firstBtn.click();
+    
     render();
 }
 
-// 季節や状況に合わせて画像を変更
+// 年齢に応じてカテゴリボタンを出し分け
+function refreshCategoryButtons() {
+    const grid = document.getElementById('category-grid');
+    let visibleCount = 0;
+
+    for (const [key, range] of Object.entries(categoryConfig)) {
+        const btn = document.getElementById(`cat-${key}`);
+        if (state.age >= range.min && state.age <= range.max) {
+            btn.classList.add('visible');
+            visibleCount++;
+        } else {
+            btn.classList.remove('visible');
+            btn.classList.remove('active');
+        }
+    }
+
+    // グリッドのカラム数を調整（ボタンが多い時は3列、少ない時は調整可）
+    grid.style.gridTemplateColumns = visibleCount > 4 ? "repeat(3, 1fr)" : "repeat(2, 1fr)";
+}
+
+async function updateSeasonData() {
+    let season = "seasonone"; // 5-10歳
+    if (state.age > 10) season = "seasontwo"; // 11-15歳
+    // ... 以降、80歳まで5年刻み等で分岐
+    
+    if (state.currentSeason !== season) {
+        state.currentSeason = season;
+        try {
+            const [actRes, evtRes] = await Promise.all([
+                fetch(`./date/${season}.json`),
+                fetch(`./event/${season}.json`)
+            ]);
+            state.actions = await actRes.json();
+            state.events = await evtRes.json();
+        } catch (e) {
+            console.error("Data Load Error:", e);
+        }
+    }
+}
+
 function updateVisuals() {
     const bg = document.getElementById('bg-display');
     const player = document.getElementById('player-img');
     
-    // 画像パスの例（images/haikei/5yo_spring.png などを用意）
-    bg.style.backgroundImage = `url('./images/haikei/age5_room.png')`;
-    player.style.backgroundImage = `url('./images/prayer/${state.gender}_5yo.png')`;
+    // 年齢層に応じた画像パスの決定ロジック
+    let ageGroup = "child";
+    if (state.age >= 13) ageGroup = "teen";
+    if (state.age >= 20) ageGroup = "adult";
+    if (state.age >= 65) ageGroup = "senior";
+
+    bg.style.backgroundImage = `url('./images/haikei/age${state.age}_bg.png')`;
+    player.style.backgroundImage = `url('./images/prayer/${state.gender}_${ageGroup}.png')`;
 }
 
 function render() {
@@ -218,6 +282,7 @@ function render() {
     document.getElementById('display-age').innerText = `${state.age}歳 0ヶ月 1週 ${((state.day-1)%7)+1}日`;
 }
 
+let currentCat = '';
 function selectCat(cat, btn) {
     currentCat = cat;
     document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
@@ -226,24 +291,39 @@ function selectCat(cat, btn) {
     const list = document.getElementById('sub-action-list');
     const subActions = state.actions[cat] || [];
     
-    list.innerHTML = subActions.map((s, i) => `
-        <button class="sub-btn" onclick="doAction(${i})">
-            <b>${s.label}</b>
-        </button>
-    `).join('');
+    list.innerHTML = subActions.length > 0 
+        ? subActions.map((s, i) => `<button class="sub-btn" onclick="doAction(${i})"><b>${s.label}</b></button>`).join('')
+        : `<div style="text-align:center; padding:20px; color:#ccc;">アクションがありません</div>`;
 }
 
-function doAction(idx) {
+async function doAction(idx) {
     const sub = state.actions[currentCat][idx];
     const overlay = document.getElementById('loading-overlay');
     document.getElementById('loading-text').innerText = `${sub.label} 中...`;
     overlay.style.display = "flex";
 
-    setTimeout(() => {
+    setTimeout(async () => {
+        // パラメータ更新
         for(let k in sub.effect) state.params[k] += sub.effect[k];
         state.logs.unshift({ date: document.getElementById('display-date').innerText, act: sub.label, nar: sub.desc });
         
-        if(state.isPM) { state.day++; state.isPM = false; } else { state.isPM = true; }
+        // 時間進行
+        if(state.isPM) { 
+            state.day++; 
+            state.isPM = false; 
+            // 簡易的な加齢チェック（例：30日で1歳上がるデモ。本来は誕生日等で判定）
+            if(state.day > 30) {
+                state.day = 1;
+                state.age++;
+                alert(`${state.age}歳になりました！環境が変わります。`);
+                await updateSeasonData();
+                refreshCategoryButtons();
+                updateVisuals();
+                initCalendarUI();
+            }
+        } else { 
+            state.isPM = true; 
+        }
         
         overlay.style.display = "none";
         render();
@@ -260,6 +340,7 @@ function updateLogUI() {
 function initCalendarUI() {
     const list = document.getElementById('calendar-list');
     list.innerHTML = "";
+    if(!state.events.calendar) return;
     for(let d=1; d<=30; d++){
         const wd = weekDays[(d + 2) % 7];
         const ev = state.events.calendar[d] || "---";
