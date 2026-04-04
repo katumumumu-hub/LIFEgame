@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>THE LIFE - Debug Engine v2.1</title>
+    <title>THE LIFE - 日本語版精密エンジン</title>
     <style>
         :root {
             --primary: #FF9AA2;
@@ -11,12 +11,12 @@
             --bg: #FFFDF9;
             --text: #5D514E;
             --card: #FFFFFF;
-            --radius: 20px;
+            --radius: 25px;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body {
-            font-family: 'Hiragino Maru Gothic ProN', sans-serif;
+            font-family: 'Hiragino Maru Gothic ProN', 'Hiragino Sans', sans-serif;
             background-color: var(--bg); color: var(--text);
             margin: 0; display: flex; justify-content: center; height: 100vh; overflow: hidden;
         }
@@ -27,80 +27,66 @@
             position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.05);
         }
 
-        /* ヘッダー・ステータス */
-        #header { background: var(--primary); color: white; padding: 12px 15px; border-radius: 0 0 var(--radius) var(--radius); flex-shrink: 0; }
-        .date-badge { background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 10px; font-weight: bold; font-size: 0.85em; }
+        /* ヘッダーエリア */
+        #header { background: var(--primary); color: white; padding: 20px 20px 30px; border-radius: 0 0 40px 40px; flex-shrink: 0; position: relative; }
+        .hero-name { font-size: 1.2em; font-weight: bold; margin-bottom: 8px; }
+        .date-badge { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.8); color: var(--primary-dark); padding: 8px 15px; border-radius: 20px; font-weight: bold; font-size: 0.9em; }
+        .age-badge { background: rgba(255,255,255,0.3); display: inline-block; padding: 5px 15px; border-radius: 15px; font-size: 0.85em; font-weight: bold; }
 
+        /* ステータスバー */
         #status-bar {
             display: grid; grid-template-columns: repeat(5, 1fr);
-            background: #FFF5F5; padding: 10px 5px; margin: 10px;
-            border-radius: 15px; border: 1px solid #FFEDEE; flex-shrink: 0;
+            background: #FFF5F5; padding: 12px 5px; margin: -15px 20px 10px;
+            border-radius: 20px; border: 1px solid #FFEDEE; flex-shrink: 0; z-index: 10;
         }
-        .stat-item { text-align: center; font-size: 0.65em; border-right: 1px solid #FFEDEE; }
-        .stat-item:last-child { border-right: none; }
-        .stat-item b { display: block; font-size: 1.2em; color: var(--primary-dark); }
+        .stat-item { text-align: center; font-size: 0.7em; color: #887C79; }
+        .stat-item b { display: block; font-size: 1.3em; color: var(--primary-dark); margin-top: 2px; }
 
-        /* プロフィールカード */
-        #hero-profile-card {
-            display: flex; margin: 0 10px; background: #fff; border-radius: var(--radius);
-            border: 2px solid #F8F9FA; height: 150px; overflow: hidden; flex-shrink: 0;
+        /* メインコンテンツ */
+        #main-content { flex: 1; padding: 10px 20px; overflow-y: auto; display: flex; flex-direction: column; }
+        
+        /* イラスト表示エリア */
+        #visual-card {
+            width: 100%; height: 180px; background: #FFF9F9; border-radius: 20px;
+            margin-bottom: 15px; display: flex; justify-content: center; align-items: center; overflow: hidden;
         }
-        #hero-visual-area { width: 40%; background: #FFF9F9; display: flex; justify-content: center; align-items: center; border-right: 1px solid #F1F2F6; }
-        #player-canvas { width: 90%; height: 90%; object-fit: contain; }
-        
-        #hero-detail-area { width: 60%; padding: 10px; display: flex; flex-direction: column; justify-content: center; gap: 5px; }
-        .hero-name { font-weight: bold; font-size: 0.95em; color: var(--primary-dark); }
-        .hero-age { font-size: 0.75em; color: #887C79; margin-bottom: 5px; }
-        
-        .gauge-group { margin-bottom: 4px; }
-        .gauge-label { font-size: 0.6em; font-weight: bold; display: flex; justify-content: space-between; margin-bottom: 2px; }
-        .gauge-bg { height: 5px; background: #EEE; border-radius: 3px; overflow: hidden; }
-        .gauge-fill { height: 100%; transition: width 0.3s; }
+        #player-canvas { max-width: 100%; max-height: 100%; object-fit: contain; }
 
-        /* メイン・アクション */
-        #main-content { flex: 1; padding: 10px; overflow-y: auto; }
-        #category-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 15px; }
+        .section-title { font-weight: bold; text-align: center; margin: 15px 0; color: #A89B98; font-size: 1.1em; letter-spacing: 0.1em; }
+
+        /* カテゴリボタン */
+        #category-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
         .cat-btn {
-            padding: 10px 2px; border: 2px solid #F1F2F6; border-radius: 12px; background: white;
-            cursor: pointer; font-weight: bold; color: #887C79; font-size: 0.75em;
+            padding: 12px 5px; border: 2px solid #F1F2F6; border-radius: 15px; background: white;
+            cursor: pointer; font-weight: bold; color: #887C79; font-size: 0.85em; transition: 0.2s;
         }
         .cat-btn.active { border-color: var(--primary); color: var(--primary); background: #FFF5F5; }
 
-        #sub-action-list { display: flex; flex-direction: column; gap: 8px; }
+        /* アクションリスト */
+        #sub-action-list { display: flex; flex-direction: column; gap: 10px; padding-bottom: 30px; }
         .sub-btn { 
-            padding: 15px; border: 2px solid #F1F2F6; border-radius: 15px; background: #fff; 
-            text-align: left; cursor: pointer; transition: 0.2s;
+            padding: 16px; border: 1px solid #EEE; border-radius: 15px; background: #fff; 
+            text-align: left; cursor: pointer; display: flex; flex-direction: column;
         }
-        .sub-btn b { display: block; font-size: 0.9em; margin-bottom: 3px; }
+        .sub-btn b { font-size: 0.95em; color: #007AFF; margin-bottom: 4px; }
         .sub-btn span { font-size: 0.7em; color: #999; }
 
         /* ナビゲーション */
-        #nav-bar { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid #EEE; background: #fff; }
-        .nav-item { padding: 15px; border: none; background: none; font-size: 0.8em; color: #9B918F; font-weight: bold; cursor: pointer; }
+        #nav-bar { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid #EEE; background: #fff; flex-shrink: 0; }
+        .nav-item { padding: 15px; border: none; background: none; font-size: 0.85em; color: #9B918F; font-weight: bold; cursor: pointer; }
 
-        /* モーダル (デバッグパネル) */
-        .modal-overlay {
-            position: absolute; inset: 0; background: rgba(0,0,0,0.7); z-index: 200;
-            display: none; justify-content: center; align-items: flex-end;
-        }
-        .modal-content {
-            width: 100%; height: 85%; background: white; border-radius: 30px 30px 0 0;
-            display: flex; flex-direction: column; padding: 20px; animation: slideUp 0.3s ease-out;
-        }
+        /* デバッグモーダル */
+        .modal-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; display: none; justify-content: center; align-items: flex-end; }
+        .modal-content { width: 100%; height: 85%; background: white; border-radius: 30px 30px 0 0; display: flex; flex-direction: column; padding: 25px; animation: slideUp 0.3s ease-out; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .debug-scroll { flex: 1; overflow-y: auto; font-family: monospace; font-size: 0.75em; }
-        .debug-section { margin-bottom: 15px; border-bottom: 1px solid #EEE; padding-bottom: 10px; }
-        .debug-section h4 { margin: 0 0 5px; color: var(--primary-dark); }
-        .debug-row { display: flex; justify-content: space-between; padding: 2px 0; }
+        .debug-scroll { flex: 1; overflow-y: auto; font-family: monospace; font-size: 0.8em; padding-top: 10px; }
+        .debug-section { margin-bottom: 20px; }
+        .debug-section h4 { margin: 10px 0; color: #FF4B5C; border-bottom: 1px solid #FFE6E6; padding-bottom: 4px; font-size: 0.9em; }
+        .debug-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px inset #FAFAFA; }
 
-        /* セットアップ・ローディング */
-        .overlay { position: absolute; inset: 0; z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        #setup-overlay { background: var(--primary); color: white; padding: 40px; }
-        #loading-overlay { background: rgba(255,255,255,0.9); display: none; }
-        .spinner { width: 30px; height: 30px; border: 3px solid #EEE; border-top: 3px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* セットアップ */
+        #setup-overlay { position: absolute; inset: 0; background: var(--primary); color: white; z-index: 300; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px; text-align: center; }
+        input, select { width: 100%; padding: 15px; border-radius: 15px; border: none; margin-bottom: 15px; font-size: 1em; }
     </style>
 </head>
 <body>
@@ -108,106 +94,106 @@
 <div id="app-container">
     <div id="debug-modal" class="modal-overlay">
         <div class="modal-content">
-            <div class="modal-header">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
                 <h3 style="margin:0;">🛠 隠しパラメータ確認</h3>
-                <button onclick="toggleDebug(false)" style="border:none; background:#EEE; padding:10px; border-radius:10px;">閉じる</button>
+                <button onclick="toggleDebug(false)" style="border:none; background:#F0F0F0; padding:8px 15px; border-radius:10px; font-weight:bold;">閉じる</button>
             </div>
-            <div class="debug-scroll" id="debug-viewer">
-                </div>
+            <div class="debug-scroll" id="debug-viewer"></div>
         </div>
     </div>
 
-    <div id="setup-overlay" class="overlay">
-        <h2>THE LIFE <small>Engine 2.1</small></h2>
-        <input type="text" id="input-name" style="width:100%; padding:15px; border-radius:15px; border:none; margin-bottom:15px;" placeholder="あなたの名前">
-        <select id="input-gender" style="width:100%; padding:15px; border-radius:15px; border:none; margin-bottom:30px;">
+    <div id="setup-overlay">
+        <h1 style="margin-bottom:10px;">THE LIFE</h1>
+        <p style="margin-bottom:30px; opacity:0.9;">人生シミュレーター</p>
+        <input type="text" id="input-name" placeholder="なまえをいれてね">
+        <select id="input-gender">
             <option value="boy">おとこのこ 👦</option>
             <option value="girl">おんなのこ 👧</option>
         </select>
-        <button onclick="startGame()" style="width:100%; padding:18px; border-radius:30px; border:none; background:white; color:var(--primary); font-weight:bold;">はじめる</button>
-    </div>
-
-    <div id="loading-overlay" class="overlay">
-        <div class="spinner"></div>
-        <p id="loading-text" style="margin-top:10px; font-weight:bold; color:var(--primary);"></p>
+        <button onclick="startGame()" style="width:100%; padding:18px; border-radius:30px; border:none; background:white; color:var(--primary); font-weight:bold; font-size:1.1em; cursor:pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">はじめる</button>
     </div>
 
     <div id="header">
+        <div class="hero-name" id="display-name">---</div>
         <div class="date-badge" id="display-date">---</div>
+        <div class="age-badge" id="display-age">---</div>
     </div>
 
     <div id="status-bar">
-        <div class="stat-item">体<b><span id="st-hp">0</span></b></div>
-        <div class="stat-item">知<b><span id="st-int">0</span></b></div>
-        <div class="stat-item">感<b><span id="st-sen">0</span></b></div>
-        <div class="stat-item">社<b><span id="st-soc">0</span></b></div>
-        <div class="stat-item">心<b><span id="st-mnt">0</span></b></div>
+        <div class="stat-item">体力<b><span id="st-hp">0</span></b></div>
+        <div class="stat-item">知力<b><span id="st-int">0</span></b></div>
+        <div class="stat-item">感性<b><span id="st-sen">0</span></b></div>
+        <div class="stat-item">社交<b><span id="st-soc">0</span></b></div>
+        <div class="stat-item">精神<b><span id="st-mnt">0</span></b></div>
     </div>
 
     <div id="main-content">
-        <div id="hero-profile-card">
-            <div id="hero-visual-area"><canvas id="player-canvas"></canvas></div>
-            <div id="hero-detail-area">
-                <div class="hero-name" id="hero-name-label">---</div>
-                <div class="hero-age" id="hero-age-label">---</div>
-                <div class="gauge-group">
-                    <div class="gauge-label"><span>体調</span><span id="label-cond">100%</span></div>
-                    <div class="gauge-bg"><div id="fill-cond" class="gauge-fill" style="width:100%; background:#77DD77;"></div></div>
-                </div>
-                <div class="gauge-group">
-                    <div class="gauge-label"><span>疲労</span><span id="label-fatigue">0%</span></div>
-                    <div class="gauge-bg"><div id="fill-fatigue" class="gauge-fill" style="width:0%; background:#FFB347;"></div></div>
-                </div>
-            </div>
+        <div id="visual-card">
+            <canvas id="player-canvas"></canvas>
         </div>
 
-        <div id="category-grid" style="margin-top:15px;">
-            <button class="cat-btn" id="cat-study" onclick="selectCat('study', this)">📖 勉強</button>
-            <button class="cat-btn" id="cat-exercise" onclick="selectCat('exercise', this)">🏃 運動</button>
-            <button class="cat-btn" id="cat-rest" onclick="selectCat('rest', this)">🛌 休む</button>
+        <div class="section-title">✨ きょうは なにをする？ ✨</div>
+        
+        <div id="category-grid">
+            <button class="cat-btn" id="cat-study" onclick="selectCat('study', this)">📖 べんきょう</button>
+            <button class="cat-btn" id="cat-play" onclick="selectCat('play', this)">🧸 あそぶ</button>
+            <button class="cat-btn" id="cat-rest" onclick="selectCat('rest', this)">🛌 やすむ</button>
         </div>
+
         <div id="sub-action-list"></div>
     </div>
 
     <div id="nav-bar">
-        <button class="nav-item">🗓️ 予定</button>
-        <button class="nav-item">📖 記録</button>
-        <button class="nav-item" onclick="toggleDebug(true)">⚙️ 設定</button>
+        <button class="nav-item">🗓️ よてい</button>
+        <button class="nav-item">📖 きろく</button>
+        <button class="nav-item" onclick="toggleDebug(true)">⚙️ せってい</button>
     </div>
 </div>
 
 <script>
 // ==========================================
-// 1. パラメータ初期化
+// 1. データ定義（日本語化）
 // ==========================================
 let state = {
-    name: "", gender: "", age: 5, day: 1, isPM: false,
+    name: "", gender: "", age: 5, month: 0, week: 1, day: 1, isPM: false,
     params: { hp: 10, int: 10, sen: 10, soc: 10, mnt: 10 },
     fatigue: 0, condition: 100, weight: 100,
     hiddenParams: {
-        health: { vesselAge: 5, liverDetox: 100, immuneLevel: 100, lungCapacity: 50, insulinSensitivity: 100, boneDensity: 100, inflammation: 0 },
-        muscle: { pectoralis: 10, latissimus: 10, biceps: 5, quadriceps: 15, innerMuscle: 10, flexibility: 50, burstPower: 20 },
-        academic: { linguistic: 10, logical: 10, spatial: 10, musical: 5, workingMemory: 50, economicLiteracy: 0 },
-        personality: { openness: 50, conscientiousness: 50, extraversion: 50, agreeableness: 50, neuroticism: 30, karma: 100, resilience: 50 },
-        lifestyle: { skinCycle: 28, cleanliness: 80, posture: 100, savingHabit: 50 }
+        "【健康・バイオ】": {
+            "血管年齢": 5, "免疫力": 100, "肺活量": 50, "炎症値": 0, "インスリン感度": 100, "糖分依存度": 0
+        },
+        "【筋肉・部位別】": {
+            "大胸筋": 10, "広背筋": 10, "上腕二頭筋": 5, "大腿四頭筋": 15, "体幹": 10, "柔軟性": 50
+        },
+        "【学力・知能】": {
+            "言語知能": 10, "論理数学": 10, "空間認識": 10, "ワーキングメモリ": 50, "経済意識": 0
+        },
+        "【性格・深層】": {
+            "開放性": 50, "誠実性": 50, "外向性": 50, "協調性": 50, "神経症傾向": 30, "徳（カルマ）": 100
+        },
+        "【生活習慣】": {
+            "肌の周期": 28, "清潔感": 80, "姿勢": 100, "貯金癖": 50
+        }
     }
 };
 
 const actionMaster = {
     study: [
-        { label: 'おんどく', main: { int: 1 }, hidden: { 'academic.linguistic': 2, 'academic.workingMemory': 0.5 } },
-        { label: 'さんすう', main: { int: 1 }, hidden: { 'academic.logical': 2, 'health.insulinSensitivity': -0.2 } }
+        { label: 'ひらがな・カタカナ', sub: '知力・精神↑', main: { int: 1.2, mnt: 0.5 }, hidden: { "【学力・知能】.言語知能": 2, "【学力・知能】.ワーキングメモリ": 0.5 } },
+        { label: 'かずのかぞえっこ', sub: '知力・精神↑', main: { int: 1.5 }, hidden: { "【学力・知能】.論理数学": 2.5, "【健康・バイオ】.インスリン感度": -0.1 } },
+        { label: 'えいごのおうた', sub: '知力・精神↑', main: { int: 1, sen: 0.5 }, hidden: { "【学力・知能】.言語知能": 1.5, "【学力・知能】.ワーキングメモリ": 1 } }
     ],
-    exercise: [
-        { label: 'かけっこ', main: { hp: 2 }, hidden: { 'muscle.quadriceps': 3, 'health.lungCapacity': 1.5, 'health.vesselAge': -0.01 } }
+    play: [
+        { label: 'おそとをはしる', sub: '体力・社交↑', main: { hp: 2, soc: 0.5 }, hidden: { "【筋肉・部位別】.大腿四頭筋": 3, "【健康・バイオ】.肺活量": 2, "【健康・バイオ】.免疫力": 0.5 } },
+        { label: 'おえかき', sub: '感性・知力↑', main: { sen: 2, int: 0.5 }, hidden: { "【学力・知能】.空間認識": 2, "【性格・深層】.開放性": 0.5 } }
     ],
     rest: [
-        { label: 'おひるね', main: {}, hidden: { 'health.inflammation': -3, 'personality.resilience': 1 } }
+        { label: 'おひるね', sub: 'つかれを回復', main: {}, hidden: { "【健康・バイオ】.炎症値": -5, "【健康・バイオ】.免疫力": 1, "【生活習慣】.肌の周期": -0.1 } }
     ]
 };
 
 // ==========================================
-// 2. コアエンジン
+// 2. コアロジック
 // ==========================================
 
 function startGame() {
@@ -218,112 +204,85 @@ function startGame() {
     render();
 }
 
-function updateHiddenStats(impacts) {
-    for (let path in impacts) {
-        let keys = path.split('.');
-        let target = state.hiddenParams;
-        for (let i = 0; i < keys.length - 1; i++) target = target[keys[i]];
-        target[keys[keys.length - 1]] += impacts[path];
-    }
-}
-
-function onDayPass() {
-    // 隠しパラメータの経年変化シミュレーション
-    state.hiddenParams.muscle.quadriceps -= 0.005;
-    state.hiddenParams.health.inflammation = Math.max(0, state.hiddenParams.health.inflammation - 0.5);
+function updateHidden(path, val) {
+    let parts = path.split('.');
+    state.hiddenParams[parts[0]][parts[1]] += val;
 }
 
 function doAction(cat, idx) {
     const act = actionMaster[cat][idx];
-    document.getElementById('loading-overlay').style.display = "flex";
-    document.getElementById('loading-text').innerText = `${act.label}...`;
+    
+    // パラメータ更新
+    for(let k in act.main) state.params[k] += act.main[k];
+    for(let p in act.hidden) updateHidden(p, act.hidden[p]);
 
-    setTimeout(() => {
-        for(let k in act.main) state.params[k] += act.main[k];
-        updateHiddenStats(act.hidden);
+    // 疲労・体調の基本計算
+    if(cat === 'rest') {
+        state.fatigue = Math.max(0, state.fatigue - 40);
+        state.condition = Math.min(100, state.condition + 10);
+    } else {
+        state.fatigue = Math.min(100, state.fatigue + 15);
+        if(state.fatigue > 80) state.condition = Math.max(0, state.condition - 5);
+    }
 
-        if(cat === 'rest') {
-            state.fatigue = Math.max(0, state.fatigue - 30);
-            state.condition = Math.min(100, state.condition + 10);
-        } else {
-            state.fatigue = Math.min(100, state.fatigue + 15);
-            if(state.fatigue > 80) state.condition = Math.max(0, state.condition - 5);
-        }
+    // 時間進捗
+    if(state.isPM) {
+        state.day++; state.isPM = false;
+        // 1週間・1ヶ月の計算
+        if(state.day > 7) { state.day = 1; state.week++; }
+        if(state.week > 4) { state.week = 1; state.month++; }
+        if(state.month >= 12) { state.month = 0; state.age++; }
+    } else {
+        state.isPM = true;
+    }
 
-        if(state.isPM) { state.day++; state.isPM = false; onDayPass(); }
-        else { state.isPM = true; }
-        
-        document.getElementById('loading-overlay').style.display = "none";
-        render();
-    }, 400);
+    render();
 }
 
 // ==========================================
-// 3. UI・デバッグ機能
+// 3. 描画・UI更新
 // ==========================================
 
 function render() {
-    for (let k in state.params) document.getElementById('st-'+k).innerText = Math.floor(state.params[k]);
-    document.getElementById('hero-name-label').innerText = `${state.name} (${state.gender === 'boy' ? 'くん' : 'ちゃん'})`;
-    document.getElementById('hero-age-label').innerText = `${state.age}歳 1週 ${((state.day-1)%7)+1}日目`;
-    
-    document.getElementById('fill-fatigue').style.width = state.fatigue + "%";
-    document.getElementById('label-fatigue').innerText = Math.floor(state.fatigue) + "%";
-    document.getElementById('fill-cond').style.width = state.condition + "%";
-    document.getElementById('label-cond').innerText = Math.floor(state.condition) + "%";
+    document.getElementById('display-name').innerText = `${state.name} （${state.gender === 'boy' ? 'おとこのこ' : 'おんなのこ'}）`;
     
     const wd = ["日", "月", "火", "水", "木", "金", "土"][(state.day + 2) % 7];
-    document.getElementById('display-date').innerText = `4月${state.day}日(${wd}) ${state.isPM?'PM':'AM'}`;
+    document.getElementById('display-date').innerText = `4月${state.day}日(${wd}) ${state.isPM ? 'PM' : 'AM'}`;
+    document.getElementById('display-age').innerText = `${state.age}歳 ${state.month}ヶ月 ${state.week}週 ${state.day}日`;
+
+    for (let k in state.params) {
+        document.getElementById('st-' + k).innerText = Math.floor(state.params[k]);
+    }
 
     drawVisual();
-    if(document.getElementById('debug-modal').style.display === "flex") updateDebugView();
-}
-
-// 隠しパラメータを画面にリストアップする
-function updateDebugView() {
-    const viewer = document.getElementById('debug-viewer');
-    let html = "";
-    
-    for (let section in state.hiddenParams) {
-        html += `<div class="debug-section"><h4>[ ${section.toUpperCase()} ]</h4>`;
-        for (let param in state.hiddenParams[section]) {
-            let val = state.hiddenParams[section][param];
-            // オブジェクト（依存度など）の場合はさらにループ
-            if (typeof val === 'object') {
-                for (let sub in val) {
-                    html += `<div class="debug-row"><span>└ ${sub}</span><b>${val[sub].toFixed(2)}</b></div>`;
-                }
-            } else {
-                html += `<div class="debug-row"><span>${param}</span><b>${val.toFixed(2)}</b></div></div>`;
-            }
-        }
-        html += `</div>`;
-    }
-    viewer.innerHTML = html;
-}
-
-function toggleDebug(show) {
-    const modal = document.getElementById('debug-modal');
-    modal.style.display = show ? "flex" : "none";
-    if(show) updateDebugView();
 }
 
 function drawVisual() {
     const canvas = document.getElementById('player-canvas');
     const ctx = canvas.getContext('2d');
     const img = new Image();
-    img.src = `./images/prayer/${state.gender}_child.png`; 
+    // ユーザーがアップロードした画像をシミュレート
+    img.src = state.gender === 'boy' ? '画像1.png' : '画像2.png';
+
     img.onload = function() {
         canvas.width = img.width; canvas.height = img.height;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        let scaleX = Math.min(1.4, Math.max(0.7, state.weight / 100));
-        let paleIntensity = (100 - state.condition) / 100;
+        
+        // 体調による顔色（青ざめる）
+        let pale = (100 - state.condition) / 100;
+        // 体重による変形
+        let scaleX = Math.min(1.3, Math.max(0.8, state.weight / 100));
+
         ctx.save();
-        ctx.translate(canvas.width / 2, 0); ctx.scale(scaleX, 1.0); ctx.translate(-canvas.width / 2, 0);
+        ctx.translate(canvas.width / 2, 0);
+        ctx.scale(scaleX, 1.0);
+        ctx.translate(-canvas.width / 2, 0);
         ctx.drawImage(img, 0, 0);
-        if (paleIntensity > 0) {
+
+        if(pale > 0) {
             ctx.globalCompositeOperation = 'source-atop';
-            ctx.fillStyle = `rgba(130, 130, 255, ${paleIntensity * 0.4})`; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = `rgba(100, 100, 255, ${pale * 0.3})`;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
         ctx.restore();
     };
@@ -336,8 +295,25 @@ function selectCat(cat, btn) {
     list.innerHTML = actionMaster[cat].map((s, i) => `
         <button class="sub-btn" onclick="doAction('${cat}', ${i})">
             <b>${s.label}</b>
+            <span>${s.sub}</span>
         </button>
     `).join('');
+}
+
+function toggleDebug(show) {
+    const modal = document.getElementById('debug-modal');
+    modal.style.display = show ? "flex" : "none";
+    if(show) {
+        let html = "";
+        for(let sec in state.hiddenParams) {
+            html += `<div class="debug-section"><h4>${sec}</h4>`;
+            for(let p in state.hiddenParams[sec]) {
+                html += `<div class="debug-row"><span>${p}</span><b>${state.hiddenParams[sec][p].toFixed(2)}</b></div>`;
+            }
+            html += `</div>`;
+        }
+        document.getElementById('debug-viewer').innerHTML = html;
+    }
 }
 </script>
 </body>
