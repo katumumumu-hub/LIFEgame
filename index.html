@@ -3,116 +3,137 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>THE LIFE - Visual Engine</title>
+    <title>THE LIFE - Debug Engine v2.1</title>
     <style>
         :root {
             --primary: #FF9AA2;
             --primary-dark: #FF7B84;
-            --secondary: #B5EAD7;
             --bg: #FFFDF9;
             --text: #5D514E;
             --card: #FFFFFF;
-            --radius: 25px;
+            --radius: 20px;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body {
             font-family: 'Hiragino Maru Gothic ProN', sans-serif;
             background-color: var(--bg); color: var(--text);
-            margin: 0; display: flex; justify-content: center; align-items: center;
-            height: 100vh; overflow: hidden;
+            margin: 0; display: flex; justify-content: center; height: 100vh; overflow: hidden;
         }
 
         #app-container {
             width: 100%; max-width: 414px; height: 100%;
             background: var(--card); display: flex; flex-direction: column;
-            position: relative; overflow: hidden;
+            position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.05);
         }
 
-        /* ヘッダー & ステータス */
-        #header { background: var(--primary); color: white; padding: 12px 20px; border-radius: 0 0 var(--radius) var(--radius); flex-shrink: 0; }
-        .header-top { display: flex; justify-content: space-between; align-items: center; }
-        .date-badge { background: #FFEDEE; color: var(--primary-dark); padding: 5px 12px; border-radius: 15px; font-weight: bold; font-size: 0.9em; }
+        /* ヘッダー・ステータス */
+        #header { background: var(--primary); color: white; padding: 12px 15px; border-radius: 0 0 var(--radius) var(--radius); flex-shrink: 0; }
+        .date-badge { background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 10px; font-weight: bold; font-size: 0.85em; }
 
         #status-bar {
-            display: flex; justify-content: space-around;
-            background: #FFF5F5; padding: 8px 5px; margin: 8px 15px;
+            display: grid; grid-template-columns: repeat(5, 1fr);
+            background: #FFF5F5; padding: 10px 5px; margin: 10px;
             border-radius: 15px; border: 1px solid #FFEDEE; flex-shrink: 0;
         }
-        .stat-item { flex: 1; text-align: center; font-size: 0.7em; }
-        .stat-item b { display: block; font-size: 1.1em; color: var(--primary-dark); }
+        .stat-item { text-align: center; font-size: 0.65em; border-right: 1px solid #FFEDEE; }
+        .stat-item:last-child { border-right: none; }
+        .stat-item b { display: block; font-size: 1.2em; color: var(--primary-dark); }
 
-        /* メインエリア */
-        #main-content { flex: 1; padding: 0 15px; overflow-y: auto; display: flex; flex-direction: column; }
-
-        /* プロフィールエリア (画像+詳細) */
+        /* プロフィールカード */
         #hero-profile-card {
-            display: flex; background: #fff; border-radius: 20px;
-            border: 2px solid #F1F2F6; margin-top: 10px; height: 160px; overflow: hidden; flex-shrink: 0;
+            display: flex; margin: 0 10px; background: #fff; border-radius: var(--radius);
+            border: 2px solid #F8F9FA; height: 150px; overflow: hidden; flex-shrink: 0;
         }
-        #hero-visual-area {
-            width: 40%; background: #FFF9F9; display: flex; justify-content: center; align-items: center;
-            border-right: 1px solid #F1F2F6; padding: 5px;
-        }
-        /* キャンバスで描画 */
-        #player-canvas { max-width: 100%; max-height: 100%; object-fit: contain; }
+        #hero-visual-area { width: 40%; background: #FFF9F9; display: flex; justify-content: center; align-items: center; border-right: 1px solid #F1F2F6; }
+        #player-canvas { width: 90%; height: 90%; object-fit: contain; }
         
-        #hero-detail-area { width: 60%; padding: 12px; display: flex; flex-direction: column; justify-content: center; gap: 8px; }
-        .hero-name { font-weight: bold; font-size: 1em; color: var(--primary-dark); border-bottom: 2px solid #FFEDEE; padding-bottom: 2px; }
-        .hero-sub-info { font-size: 0.75em; color: #887C79; }
+        #hero-detail-area { width: 60%; padding: 10px; display: flex; flex-direction: column; justify-content: center; gap: 5px; }
+        .hero-name { font-weight: bold; font-size: 0.95em; color: var(--primary-dark); }
+        .hero-age { font-size: 0.75em; color: #887C79; margin-bottom: 5px; }
         
-        .gauge-container { width: 100%; }
-        .gauge-label { font-size: 0.65em; font-weight: bold; display: flex; justify-content: space-between; margin-bottom: 2px; }
-        .gauge-bg { height: 6px; background: #EEE; border-radius: 3px; overflow: hidden; }
+        .gauge-group { margin-bottom: 4px; }
+        .gauge-label { font-size: 0.6em; font-weight: bold; display: flex; justify-content: space-between; margin-bottom: 2px; }
+        .gauge-bg { height: 5px; background: #EEE; border-radius: 3px; overflow: hidden; }
         .gauge-fill { height: 100%; transition: width 0.3s; }
-        .fill-fatigue { background: #FFB347; }
-        .fill-condition { background: #77DD77; }
 
-        /* アクションエリア */
-        .section-title { font-weight: bold; text-align: center; margin: 15px 0 10px; font-size: 0.9em; color: #A89B98; }
-        #category-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 10px; }
+        /* メイン・アクション */
+        #main-content { flex: 1; padding: 10px; overflow-y: auto; }
+        #category-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 15px; }
         .cat-btn {
             padding: 10px 2px; border: 2px solid #F1F2F6; border-radius: 12px; background: white;
-            cursor: pointer; font-weight: bold; color: #887C79; font-size: 0.75em; display: none;
+            cursor: pointer; font-weight: bold; color: #887C79; font-size: 0.75em;
         }
         .cat-btn.active { border-color: var(--primary); color: var(--primary); background: #FFF5F5; }
-        .cat-btn.visible { display: block; }
 
-        #sub-action-list { display: flex; flex-direction: column; gap: 6px; padding-bottom: 20px; }
-        .sub-btn { padding: 12px; border: 2px solid #F1F2F6; border-radius: 10px; background: #fff; text-align: left; cursor: pointer; }
-        .sub-btn b { font-size: 0.85em; color: var(--text); }
+        #sub-action-list { display: flex; flex-direction: column; gap: 8px; }
+        .sub-btn { 
+            padding: 15px; border: 2px solid #F1F2F6; border-radius: 15px; background: #fff; 
+            text-align: left; cursor: pointer; transition: 0.2s;
+        }
+        .sub-btn b { display: block; font-size: 0.9em; margin-bottom: 3px; }
+        .sub-btn span { font-size: 0.7em; color: #999; }
 
         /* ナビゲーション */
         #nav-bar { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid #EEE; background: #fff; }
-        .nav-item { padding: 12px; border: none; background: none; cursor: pointer; font-size: 0.8em; color: #9B918F; font-weight: bold; }
+        .nav-item { padding: 15px; border: none; background: none; font-size: 0.8em; color: #9B918F; font-weight: bold; cursor: pointer; }
 
-        /* ローディング & セットアップ */
-        #loading-overlay { position: absolute; inset: 0; background: rgba(255,255,255,0.9); z-index: 100; display: none; flex-direction: column; justify-content: center; align-items: center; }
-        .spinner { width: 30px; height: 30px; border: 3px solid #FFE6E6; border-top: 3px solid var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        /* モーダル (デバッグパネル) */
+        .modal-overlay {
+            position: absolute; inset: 0; background: rgba(0,0,0,0.7); z-index: 200;
+            display: none; justify-content: center; align-items: flex-end;
+        }
+        .modal-content {
+            width: 100%; height: 85%; background: white; border-radius: 30px 30px 0 0;
+            display: flex; flex-direction: column; padding: 20px; animation: slideUp 0.3s ease-out;
+        }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .debug-scroll { flex: 1; overflow-y: auto; font-family: monospace; font-size: 0.75em; }
+        .debug-section { margin-bottom: 15px; border-bottom: 1px solid #EEE; padding-bottom: 10px; }
+        .debug-section h4 { margin: 0 0 5px; color: var(--primary-dark); }
+        .debug-row { display: flex; justify-content: space-between; padding: 2px 0; }
+
+        /* セットアップ・ローディング */
+        .overlay { position: absolute; inset: 0; z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        #setup-overlay { background: var(--primary); color: white; padding: 40px; }
+        #loading-overlay { background: rgba(255,255,255,0.9); display: none; }
+        .spinner { width: 30px; height: 30px; border: 3px solid #EEE; border-top: 3px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        #setup-overlay { position: absolute; inset: 0; background: var(--primary); color: white; z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px; }
     </style>
 </head>
 <body>
 
 <div id="app-container">
-    <div id="setup-overlay">
-        <h2>👶 THE LIFE</h2>
-        <input type="text" id="input-name" style="width:80%; padding:12px; border-radius:10px; border:none; margin-bottom:10px;" placeholder="なまえ">
-        <select id="input-gender" style="width:80%; padding:12px; border-radius:10px; border:none; margin-bottom:20px;">
+    <div id="debug-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="margin:0;">🛠 隠しパラメータ確認</h3>
+                <button onclick="toggleDebug(false)" style="border:none; background:#EEE; padding:10px; border-radius:10px;">閉じる</button>
+            </div>
+            <div class="debug-scroll" id="debug-viewer">
+                </div>
+        </div>
+    </div>
+
+    <div id="setup-overlay" class="overlay">
+        <h2>THE LIFE <small>Engine 2.1</small></h2>
+        <input type="text" id="input-name" style="width:100%; padding:15px; border-radius:15px; border:none; margin-bottom:15px;" placeholder="あなたの名前">
+        <select id="input-gender" style="width:100%; padding:15px; border-radius:15px; border:none; margin-bottom:30px;">
             <option value="boy">おとこのこ 👦</option>
             <option value="girl">おんなのこ 👧</option>
         </select>
-        <button onclick="startGame()" style="padding:12px 40px; border-radius:20px; border:none; background:white; color:var(--primary); font-weight:bold;">はじめる</button>
+        <button onclick="startGame()" style="width:100%; padding:18px; border-radius:30px; border:none; background:white; color:var(--primary); font-weight:bold;">はじめる</button>
     </div>
 
-    <div id="loading-overlay">
+    <div id="loading-overlay" class="overlay">
         <div class="spinner"></div>
-        <div id="loading-text" style="margin-top:10px; font-size:0.8em;"></div>
+        <p id="loading-text" style="margin-top:10px; font-weight:bold; color:var(--primary);"></p>
     </div>
 
     <div id="header">
-        <div class="header-top"><div id="display-date" class="date-badge">---</div></div>
+        <div class="date-badge" id="display-date">---</div>
     </div>
 
     <div id="status-bar">
@@ -125,28 +146,24 @@
 
     <div id="main-content">
         <div id="hero-profile-card">
-            <div id="hero-visual-area">
-                <canvas id="player-canvas"></canvas>
-            </div>
+            <div id="hero-visual-area"><canvas id="player-canvas"></canvas></div>
             <div id="hero-detail-area">
                 <div class="hero-name" id="hero-name-label">---</div>
-                <div class="hero-sub-info" id="hero-age-label">---</div>
-                <div class="gauge-container">
+                <div class="hero-age" id="hero-age-label">---</div>
+                <div class="gauge-group">
                     <div class="gauge-label"><span>体調</span><span id="label-cond">100%</span></div>
-                    <div class="gauge-bg"><div id="fill-cond" class="gauge-fill fill-condition"></div></div>
+                    <div class="gauge-bg"><div id="fill-cond" class="gauge-fill" style="width:100%; background:#77DD77;"></div></div>
                 </div>
-                <div class="gauge-container">
+                <div class="gauge-group">
                     <div class="gauge-label"><span>疲労</span><span id="label-fatigue">0%</span></div>
-                    <div class="gauge-bg"><div id="fill-fatigue" class="gauge-fill fill-fatigue"></div></div>
+                    <div class="gauge-bg"><div id="fill-fatigue" class="gauge-fill" style="width:0%; background:#FFB347;"></div></div>
                 </div>
             </div>
         </div>
 
-        <div class="section-title">✨ きょうは なにをする？ ✨</div>
-        <div id="category-grid">
+        <div id="category-grid" style="margin-top:15px;">
             <button class="cat-btn" id="cat-study" onclick="selectCat('study', this)">📖 勉強</button>
             <button class="cat-btn" id="cat-exercise" onclick="selectCat('exercise', this)">🏃 運動</button>
-            <button class="cat-btn" id="cat-play" onclick="selectCat('play', this)">🧸 遊び</button>
             <button class="cat-btn" id="cat-rest" onclick="selectCat('rest', this)">🛌 休む</button>
         </div>
         <div id="sub-action-list"></div>
@@ -155,141 +172,172 @@
     <div id="nav-bar">
         <button class="nav-item">🗓️ 予定</button>
         <button class="nav-item">📖 記録</button>
-        <button class="nav-item">⚙️ 設定</button>
+        <button class="nav-item" onclick="toggleDebug(true)">⚙️ 設定</button>
     </div>
 </div>
 
 <script>
+// ==========================================
+// 1. パラメータ初期化
+// ==========================================
 let state = {
     name: "", gender: "", age: 5, day: 1, isPM: false,
-    params: { hp: 10, int: 10, sen: 10, soc: 10, mnt: 10, weight: 100 }, // 体重(標準100)を追加
-    fatigue: 0, condition: 100,
-    actions: {}, currentSeason: "seasonone"
+    params: { hp: 10, int: 10, sen: 10, soc: 10, mnt: 10 },
+    fatigue: 0, condition: 100, weight: 100,
+    hiddenParams: {
+        health: { vesselAge: 5, liverDetox: 100, immuneLevel: 100, lungCapacity: 50, insulinSensitivity: 100, boneDensity: 100, inflammation: 0 },
+        muscle: { pectoralis: 10, latissimus: 10, biceps: 5, quadriceps: 15, innerMuscle: 10, flexibility: 50, burstPower: 20 },
+        academic: { linguistic: 10, logical: 10, spatial: 10, musical: 5, workingMemory: 50, economicLiteracy: 0 },
+        personality: { openness: 50, conscientiousness: 50, extraversion: 50, agreeableness: 50, neuroticism: 30, karma: 100, resilience: 50 },
+        lifestyle: { skinCycle: 28, cleanliness: 80, posture: 100, savingHabit: 50 }
+    }
 };
 
-const categoryConfig = {
-    study: { min: 5, max: 25 },
-    exercise: { min: 6, max: 80 },
-    play: { min: 5, max: 15 },
-    rest: { min: 5, max: 80 }
+const actionMaster = {
+    study: [
+        { label: 'おんどく', main: { int: 1 }, hidden: { 'academic.linguistic': 2, 'academic.workingMemory': 0.5 } },
+        { label: 'さんすう', main: { int: 1 }, hidden: { 'academic.logical': 2, 'health.insulinSensitivity': -0.2 } }
+    ],
+    exercise: [
+        { label: 'かけっこ', main: { hp: 2 }, hidden: { 'muscle.quadriceps': 3, 'health.lungCapacity': 1.5, 'health.vesselAge': -0.01 } }
+    ],
+    rest: [
+        { label: 'おひるね', main: {}, hidden: { 'health.inflammation': -3, 'personality.resilience': 1 } }
+    ]
 };
 
-async function startGame() {
+// ==========================================
+// 2. コアエンジン
+// ==========================================
+
+function startGame() {
     state.name = document.getElementById('input-name').value || "ななし";
     state.gender = document.getElementById('input-gender').value;
-    
-    // JSONの読み込み (ダミーデータで代用または実環境でfetch)
-    await loadActions();
-    
     document.getElementById('setup-overlay').style.display = "none";
-    refreshCategoryButtons();
+    selectCat('study', document.getElementById('cat-study'));
     render();
 }
 
-async function loadActions() {
-    try {
-        const res = await fetch(`./date/${state.currentSeason}.json`);
-        state.actions = await res.json();
-    } catch (e) {
-        // フォールバック用の簡易データ
-        state.actions = { "study": [{"label":"おべんきょう","effect":{"int":2},"desc":"がんばった！"}] };
+function updateHiddenStats(impacts) {
+    for (let path in impacts) {
+        let keys = path.split('.');
+        let target = state.hiddenParams;
+        for (let i = 0; i < keys.length - 1; i++) target = target[keys[i]];
+        target[keys[keys.length - 1]] += impacts[path];
     }
 }
 
+function onDayPass() {
+    // 隠しパラメータの経年変化シミュレーション
+    state.hiddenParams.muscle.quadriceps -= 0.005;
+    state.hiddenParams.health.inflammation = Math.max(0, state.hiddenParams.health.inflammation - 0.5);
+}
+
+function doAction(cat, idx) {
+    const act = actionMaster[cat][idx];
+    document.getElementById('loading-overlay').style.display = "flex";
+    document.getElementById('loading-text').innerText = `${act.label}...`;
+
+    setTimeout(() => {
+        for(let k in act.main) state.params[k] += act.main[k];
+        updateHiddenStats(act.hidden);
+
+        if(cat === 'rest') {
+            state.fatigue = Math.max(0, state.fatigue - 30);
+            state.condition = Math.min(100, state.condition + 10);
+        } else {
+            state.fatigue = Math.min(100, state.fatigue + 15);
+            if(state.fatigue > 80) state.condition = Math.max(0, state.condition - 5);
+        }
+
+        if(state.isPM) { state.day++; state.isPM = false; onDayPass(); }
+        else { state.isPM = true; }
+        
+        document.getElementById('loading-overlay').style.display = "none";
+        render();
+    }, 400);
+}
+
+// ==========================================
+// 3. UI・デバッグ機能
+// ==========================================
+
 function render() {
-    for (let k in state.params) { if(k !== 'weight') document.getElementById('st-'+k).innerText = Math.floor(state.params[k]); }
+    for (let k in state.params) document.getElementById('st-'+k).innerText = Math.floor(state.params[k]);
     document.getElementById('hero-name-label').innerText = `${state.name} (${state.gender === 'boy' ? 'くん' : 'ちゃん'})`;
     document.getElementById('hero-age-label').innerText = `${state.age}歳 1週 ${((state.day-1)%7)+1}日目`;
     
     document.getElementById('fill-fatigue').style.width = state.fatigue + "%";
-    document.getElementById('label-fatigue').innerText = state.fatigue + "%";
+    document.getElementById('label-fatigue').innerText = Math.floor(state.fatigue) + "%";
     document.getElementById('fill-cond').style.width = state.condition + "%";
-    document.getElementById('label-cond').innerText = state.condition + "%";
+    document.getElementById('label-cond').innerText = Math.floor(state.condition) + "%";
     
     const wd = ["日", "月", "火", "水", "木", "金", "土"][(state.day + 2) % 7];
     document.getElementById('display-date').innerText = `4月${state.day}日(${wd}) ${state.isPM?'PM':'AM'}`;
 
-    drawVisual(); // Canvas描画
+    drawVisual();
+    if(document.getElementById('debug-modal').style.display === "flex") updateDebugView();
+}
+
+// 隠しパラメータを画面にリストアップする
+function updateDebugView() {
+    const viewer = document.getElementById('debug-viewer');
+    let html = "";
+    
+    for (let section in state.hiddenParams) {
+        html += `<div class="debug-section"><h4>[ ${section.toUpperCase()} ]</h4>`;
+        for (let param in state.hiddenParams[section]) {
+            let val = state.hiddenParams[section][param];
+            // オブジェクト（依存度など）の場合はさらにループ
+            if (typeof val === 'object') {
+                for (let sub in val) {
+                    html += `<div class="debug-row"><span>└ ${sub}</span><b>${val[sub].toFixed(2)}</b></div>`;
+                }
+            } else {
+                html += `<div class="debug-row"><span>${param}</span><b>${val.toFixed(2)}</b></div></div>`;
+            }
+        }
+        html += `</div>`;
+    }
+    viewer.innerHTML = html;
+}
+
+function toggleDebug(show) {
+    const modal = document.getElementById('debug-modal');
+    modal.style.display = show ? "flex" : "none";
+    if(show) updateDebugView();
 }
 
 function drawVisual() {
     const canvas = document.getElementById('player-canvas');
     const ctx = canvas.getContext('2d');
     const img = new Image();
-    
-    // 性別と年齢層に合わせた画像パス
-    img.src = `./images/prayer/${state.gender}_child.png`;
-
+    img.src = `./images/prayer/${state.gender}_child.png`; 
     img.onload = function() {
-        canvas.width = img.width;
-        canvas.height = img.height;
+        canvas.width = img.width; canvas.height = img.height;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // --- 体重による変形 (横幅の伸縮) ---
-        let scaleX = Math.min(1.4, Math.max(0.7, state.params.weight / 100));
-        
-        ctx.save();
-        ctx.translate(canvas.width / 2, 0);
-        ctx.scale(scaleX, 1.0);
-        ctx.translate(-canvas.width / 2, 0);
-        ctx.drawImage(img, 0, 0);
-
-        // --- 体調による色調変化 (青ざめるフィルタ) ---
+        let scaleX = Math.min(1.4, Math.max(0.7, state.weight / 100));
         let paleIntensity = (100 - state.condition) / 100;
+        ctx.save();
+        ctx.translate(canvas.width / 2, 0); ctx.scale(scaleX, 1.0); ctx.translate(-canvas.width / 2, 0);
+        ctx.drawImage(img, 0, 0);
         if (paleIntensity > 0) {
             ctx.globalCompositeOperation = 'source-atop';
-            ctx.fillStyle = `rgba(130, 130, 255, ${paleIntensity * 0.4})`; 
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.globalCompositeOperation = 'source-over';
+            ctx.fillStyle = `rgba(130, 130, 255, ${paleIntensity * 0.4})`; ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
         ctx.restore();
     };
 }
 
-function refreshCategoryButtons() {
-    for (const [key, range] of Object.entries(categoryConfig)) {
-        const btn = document.getElementById(`cat-${key}`);
-        if (state.age >= range.min && state.age <= range.max) btn.classList.add('visible');
-    }
-    const first = document.querySelector('.cat-btn.visible');
-    if(first) selectCat(first.id.replace('cat-',''), first);
-}
-
-let currentCat = '';
 function selectCat(cat, btn) {
-    currentCat = cat;
     document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     const list = document.getElementById('sub-action-list');
-    const subActions = state.actions[cat] || [];
-    list.innerHTML = subActions.map((s, i) => `<button class="sub-btn" onclick="doAction(${i})"><b>${s.label}</b></button>`).join('');
-}
-
-function doAction(idx) {
-    const sub = state.actions[currentCat][idx];
-    document.getElementById('loading-overlay').style.display = "flex";
-    document.getElementById('loading-text').innerText = `${sub.label} 中...`;
-
-    setTimeout(() => {
-        for(let k in sub.effect) state.params[k] += sub.effect[k];
-        
-        // 疲労・体調の基本ロジック
-        if(currentCat === 'rest') {
-            state.fatigue = Math.max(0, state.fatigue - 30);
-            state.condition = Math.min(100, state.condition + 10);
-        } else {
-            state.fatigue = Math.min(100, state.fatigue + 15);
-            if(state.fatigue > 70) state.condition = Math.max(0, state.condition - 5);
-        }
-
-        if(state.isPM) { 
-            state.day++; state.isPM = false; 
-            state.fatigue = Math.max(0, state.fatigue - 20); // 日付変更で回復
-        } else { state.isPM = true; }
-        
-        document.getElementById('loading-overlay').style.display = "none";
-        render();
-    }, 500);
+    list.innerHTML = actionMaster[cat].map((s, i) => `
+        <button class="sub-btn" onclick="doAction('${cat}', ${i})">
+            <b>${s.label}</b>
+        </button>
+    `).join('');
 }
 </script>
 </body>
