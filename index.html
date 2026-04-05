@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>THE LIFE - 修正版エンジン</title>
+    <title>THE LIFE - イラスト表示修正版</title>
     <style>
         :root {
             --primary: #FF9AA2;
@@ -46,7 +46,7 @@
         /* メインコンテンツ */
         #main-content { flex: 1; padding: 10px 20px; overflow-y: auto; display: flex; flex-direction: column; }
         
-        /* イラスト表示エリア (修正: 高さを確保) */
+        /* イラスト表示エリア (修正済み) */
         #visual-card {
             width: 100%; height: 220px; background: #FFF9F9; border-radius: 20px;
             margin-bottom: 15px; display: flex; justify-content: center; align-items: flex-end; overflow: hidden;
@@ -106,7 +106,6 @@
 
     <div id="setup-overlay">
         <h1 style="margin-bottom:10px;">THE LIFE</h1>
-        <p style="margin-bottom:30px; opacity:0.9;">人生シミュレーター</p>
         <input type="text" id="input-name" placeholder="なまえをいれてね">
         <select id="input-gender">
             <option value="boy">おとこのこ 👦</option>
@@ -135,15 +134,12 @@
         <div id="visual-card">
             <canvas id="player-canvas"></canvas>
         </div>
-
         <div class="section-title">✨ きょうは なにをする？ ✨</div>
-        
         <div id="category-grid">
             <button class="cat-btn" id="cat-study" onclick="selectCat('study', this)">📖 べんきょう</button>
             <button class="cat-btn" id="cat-play" onclick="selectCat('play', this)">🧸 あそぶ</button>
             <button class="cat-btn" id="cat-rest" onclick="selectCat('rest', this)">🛌 やすむ</button>
         </div>
-
         <div id="sub-action-list"></div>
     </div>
 
@@ -155,47 +151,36 @@
 </div>
 
 <script>
-// ==========================================
-// 1. データ定義
-// ==========================================
 let state = {
     name: "", gender: "", age: 5, month: 0, week: 1, day: 1, isPM: false,
     params: { hp: 10, int: 10, sen: 10, soc: 10, mnt: 10 },
-    fatigue: 0, condition: 100, weight: 100,
     hiddenParams: {
-        "【健康・バイオ】": { "血管年齢": 5, "免疫力": 100, "肺活量": 50, "炎症値": 0, "インスリン感度": 100, "糖分依存度": 0 },
-        "【筋肉・部位別】": { "大胸筋": 10, "広背筋": 10, "上腕二頭筋": 5, "大腿四頭筋": 15, "体幹": 10, "柔軟性": 50 },
-        "【学力・知能】": { "言語知能": 10, "論理数学": 10, "空間認識": 10, "ワーキングメモリ": 50, "経済意識": 0 },
-        "【性格・深層】": { "開放性": 50, "誠実性": 50, "外向性": 50, "協調性": 50, "神経症傾向": 30, "徳（カルマ）": 100 },
-        "【生活習慣】": { "肌の周期": 28, "清潔感": 80, "姿勢": 100, "貯金癖": 50 }
+        "【筋肉】": { "pectorals": 10.0, "latissimus": 10.0, "biceps": 5.0, "quadriceps": 15.0, "innerMuscle": 10.0, "flexibility": 50.0, "burstPower": 20.0 },
+        "【学力】": { "linguistic": 10.0, "logical": 10.0, "spatial": 10.0, "musical": 5.0, "workingMemory": 50.0, "economicLiteracy": 0.0 },
+        "【性格】": { "openness": 50.0, "conscientiousness": 50.0, "extraversion": 50.0, "agreeableness": 50.0, "neuroticism": 30.0, "karma": 100.0, "resilience": 50.0 },
+        "【生活習慣】": { "skinCycle": 28.0, "cleanliness": 80.0, "posture": 100.0, "savingHabit": 50.0 }
     }
 };
 
 const actionMaster = {
     study: [
-        { label: 'ひらがな・カタカナ', sub: '知力・精神↑', main: { int: 1.2, mnt: 0.5 }, hidden: { "【学力・知能】.言語知能": 2, "【学力・知能】.ワーキングメモリ": 0.5 } },
-        { label: 'かずのかぞえっこ', sub: '知力・精神↑', main: { int: 1.5 }, hidden: { "【学力・知能】.論理数学": 2.5, "【健康・バイオ】.インスリン感度": -0.1 } },
-        { label: 'えいごのおうた', sub: '知力・精神↑', main: { int: 1, sen: 0.5 }, hidden: { "【学力・知能】.言語知能": 1.5, "【学力・知能】.ワーキングメモリ": 1 } }
+        { label: 'ひらがな・カタカナ', sub: '知力・精神↑', main: { int: 1.2, mnt: 0.5 }, hidden: { "【学力】.linguistic": 2.0 } },
+        { label: 'かずのかぞえっこ', sub: '知力・精神↑', main: { int: 1.5 }, hidden: { "【学力】.logical": 2.0 } },
+        { label: 'えいごのおうた', sub: '知力・精神↑', main: { int: 1, sen: 0.5 }, hidden: { "【学力】.musical": 1.0 } }
     ],
     play: [
-        { label: 'おそとをはしる', sub: '体力・社交↑', main: { hp: 2, soc: 0.5 }, hidden: { "【筋肉・部位別】.大腿四頭筋": 3, "【健康・バイオ】.肺活量": 2 } },
-        { label: 'おえかき', sub: '感性・知力↑', main: { sen: 2, int: 0.5 }, hidden: { "【学力・知能】.空間認識": 2, "【性格・深層】.開放性": 0.5 } }
+        { label: 'おそとをはしる', sub: '体力・社交↑', main: { hp: 2, soc: 0.5 }, hidden: { "【筋肉】.quadriceps": 3.0 } },
+        { label: 'おえかき', sub: '感性・知力↑', main: { sen: 2, int: 0.5 }, hidden: { "【学力】.spatial": 2.0 } }
     ],
     rest: [
-        { label: 'おひるね', sub: 'つかれを回復', main: {}, hidden: { "【健康・バイオ】.炎症値": -5, "【健康・バイオ】.免疫力": 1 } }
+        { label: 'おひるね', sub: 'つかれを回復', main: {}, hidden: { "【生活習慣】.skinCycle": -0.1 } }
     ]
 };
-
-// ==========================================
-// 2. コアロジック
-// ==========================================
 
 function startGame() {
     state.name = document.getElementById('input-name').value || "ななし";
     state.gender = document.getElementById('input-gender').value;
     document.getElementById('setup-overlay').style.display = "none";
-    
-    // 修正: ゲーム開始時に即座に描画を更新
     selectCat('study', document.getElementById('cat-study'));
     render();
 }
@@ -214,64 +199,46 @@ function doAction(cat, idx) {
 
     if(state.isPM) {
         state.day++; state.isPM = false;
-        if(state.day > 30) { state.day = 1; state.month++; }
+        if(state.day > 7) { state.day = 1; state.week++; }
+        if(state.week > 4) { state.week = 1; state.month++; }
         if(state.month >= 12) { state.month = 0; state.age++; }
-    } else {
-        state.isPM = true;
-    }
+    } else { state.isPM = true; }
     render();
 }
 
-// ==========================================
-// 3. 描画・UI更新
-// ==========================================
-
 function render() {
-    // プロフィール更新
     document.getElementById('display-name').innerText = `${state.name} （${state.gender === 'boy' ? 'おとこのこ' : 'おんなのこ'}）`;
-    
     const wd = ["日", "月", "火", "水", "木", "金", "土"][(state.day + 2) % 7];
     document.getElementById('display-date').innerText = `4月${state.day}日(${wd}) ${state.isPM ? 'PM' : 'AM'}`;
-    document.getElementById('display-age').innerText = `${state.age}歳 ${state.month}ヶ月 1週 ${((state.day-1)%7)+1}日`;
+    document.getElementById('display-age').innerText = `${state.age}歳 ${state.month}ヶ月 ${state.week}週 ${state.day}日`;
 
-    // ステータス更新
     for (let k in state.params) {
         let el = document.getElementById('st-' + k);
         if(el) el.innerText = Math.floor(state.params[k]);
     }
-
     drawVisual();
 }
 
+// 修正された描画ロジック
 function drawVisual() {
     const canvas = document.getElementById('player-canvas');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     const img = new Image();
     
-    // 修正: アップロード画像の名前に合わせる
-    img.src = state.gender === 'boy' ? '画像1.png' : '画像2.png';
+    // パスを GitHub の構造に合わせました
+    const basePath = "images/prayer/";
+    img.src = state.gender === "boy" ? basePath + "boy_child.png" : basePath + "girl_child.png";
 
     img.onload = function() {
-        // キャンバスのサイズを画像に合わせる
         canvas.width = img.width;
         canvas.height = img.height;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        // 体質によるわずかな変形ロジック
-        let scaleX = Math.min(1.2, Math.max(0.8, state.weight / 100));
-
-        ctx.save();
-        ctx.translate(canvas.width / 2, 0);
-        ctx.scale(scaleX, 1.0);
-        ctx.translate(-canvas.width / 2, 0);
         ctx.drawImage(img, 0, 0);
-        ctx.restore();
     };
     
-    // 読み込みに失敗した場合の予備
     img.onerror = function() {
-        console.error("イラストの読み込みに失敗しました。ファイル名が '画像1.png' または '画像2.png' であることを確認してください。");
+        console.error("画像が見つかりません。パスを確認してください: " + img.src);
     };
 }
 
