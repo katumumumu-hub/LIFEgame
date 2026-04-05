@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>THE LIFE - イラスト表示修正版</title>
+    <title>THE LIFE - Life Simulation</title>
     <style>
         :root {
             --primary: #FF9AA2;
             --primary-dark: #FF7B84;
+            --secondary: #B5EAD7;
             --bg: #FFFDF9;
             --text: #5D514E;
             --card: #FFFFFF;
@@ -16,259 +17,365 @@
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body {
-            font-family: 'Hiragino Maru Gothic ProN', 'Hiragino Sans', sans-serif;
+            font-family: 'Hiragino Maru Gothic ProN', sans-serif;
             background-color: var(--bg); color: var(--text);
-            margin: 0; display: flex; justify-content: center; height: 100vh; overflow: hidden;
+            margin: 0; display: flex; justify-content: center; align-items: center;
+            height: 100vh; overflow: hidden;
         }
 
         #app-container {
             width: 100%; max-width: 414px; height: 100%;
             background: var(--card); display: flex; flex-direction: column;
-            position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.05);
+            position: relative; overflow: hidden;
         }
 
-        /* ヘッダーエリア */
-        #header { background: var(--primary); color: white; padding: 20px 20px 30px; border-radius: 0 0 40px 40px; flex-shrink: 0; position: relative; }
-        .hero-info-top { display: flex; flex-direction: column; gap: 4px; }
-        .hero-name { font-size: 1.2em; font-weight: bold; }
-        .date-badge { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.8); color: var(--primary-dark); padding: 8px 15px; border-radius: 20px; font-weight: bold; font-size: 0.9em; }
-        .age-badge { background: rgba(255,255,255,0.3); display: inline-block; padding: 5px 15px; border-radius: 15px; font-size: 0.85em; font-weight: bold; margin-top: 5px; }
+        /* ヘッダー */
+        #header { background: var(--primary); color: white; padding: 12px 20px; border-radius: 0 0 var(--radius) var(--radius); z-index: 10; flex-shrink: 0; }
+        .header-top { display: flex; justify-content: space-between; align-items: center; }
+        .date-badge { background: #FFEDEE; color: var(--primary-dark); padding: 5px 12px; border-radius: 15px; font-weight: bold; font-size: 0.9em; }
 
         /* ステータスバー */
         #status-bar {
-            display: grid; grid-template-columns: repeat(5, 1fr);
-            background: #FFF5F5; padding: 12px 5px; margin: -15px 20px 10px;
-            border-radius: 20px; border: 1px solid #FFEDEE; flex-shrink: 0; z-index: 10;
+            display: flex; justify-content: space-around;
+            background: #FFF5F5; padding: 8px 5px; margin: 8px 15px;
+            border-radius: 15px; border: 1px solid #FFEDEE; flex-shrink: 0;
         }
-        .stat-item { text-align: center; font-size: 0.7em; color: #887C79; }
-        .stat-item b { display: block; font-size: 1.3em; color: var(--primary-dark); margin-top: 2px; }
+        .stat-item { flex: 1; text-align: center; font-size: 0.7em; }
+        .stat-item b { display: block; font-size: 1.1em; color: var(--primary-dark); }
 
-        /* メインコンテンツ */
-        #main-content { flex: 1; padding: 10px 20px; overflow-y: auto; display: flex; flex-direction: column; }
+        /* メインエリア */
+        #main-content { flex: 1; padding: 0 15px; overflow-y: auto; display: flex; flex-direction: column; }
+
+        /* 主人公プロフィールエリア（大幅リニューアル） */
+        #hero-profile-card {
+            display: flex; background: #fff; border-radius: 20px;
+            border: 2px solid #F1F2F6; margin-top: 10px; height: 140px; overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02); flex-shrink: 0;
+        }
+        #hero-visual-area {
+            width: 45%; background: #FFF9F9; display: flex; justify-content: center; align-items: center;
+            border-right: 1px solid #F1F2F6; position: relative;
+        }
+        #hero-face-img { width: 100%; height: 100%; background-size: contain; background-repeat: no-repeat; background-position: bottom center; }
         
-        /* イラスト表示エリア (修正済み) */
-        #visual-card {
-            width: 100%; height: 220px; background: #FFF9F9; border-radius: 20px;
-            margin-bottom: 15px; display: flex; justify-content: center; align-items: flex-end; overflow: hidden;
-            border: 1px solid #FFF0F0;
-        }
-        #player-canvas { height: 90%; width: auto; object-fit: contain; }
+        #hero-detail-area { width: 55%; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; }
+        .hero-name { font-weight: bold; font-size: 1.1em; color: var(--primary-dark); border-bottom: 2px solid #FFEDEE; padding-bottom: 4px; }
+        .hero-sub-info { font-size: 0.8em; color: #887C79; margin: 4px 0; }
+        
+        /* ゲージ系ステータス (疲労度・体調) */
+        .gauge-container { width: 100%; margin-top: 5px; }
+        .gauge-label { font-size: 0.7em; font-weight: bold; display: flex; justify-content: space-between; }
+        .gauge-bg { height: 6px; background: #EEE; border-radius: 3px; margin-top: 2px; overflow: hidden; }
+        .gauge-fill { height: 100%; width: 0%; transition: width 0.3s; }
+        .fill-fatigue { background: #FFB347; } /* 疲労はオレンジ */
+        .fill-condition { background: #77DD77; } /* 体調はグリーン */
 
-        .section-title { font-weight: bold; text-align: center; margin: 15px 0; color: #A89B98; font-size: 1.1em; letter-spacing: 0.1em; }
-
-        /* カテゴリボタン */
-        #category-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+        /* カテゴリ・アクション */
+        .section-title { font-weight: bold; text-align: center; margin: 15px 0 10px; font-size: 1em; color: #A89B98; }
+        #category-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 15px; }
         .cat-btn {
-            padding: 12px 5px; border: 2px solid #F1F2F6; border-radius: 15px; background: white;
-            cursor: pointer; font-weight: bold; color: #887C79; font-size: 0.85em; transition: 0.2s;
+            padding: 10px 2px; border: 2px solid #F1F2F6; border-radius: 15px; background: white;
+            cursor: pointer; font-weight: bold; color: #887C79; font-size: 0.8em; display: none;
         }
         .cat-btn.active { border-color: var(--primary); color: var(--primary); background: #FFF5F5; }
+        .cat-btn.visible { display: block; }
 
-        /* アクションリスト */
-        #sub-action-list { display: flex; flex-direction: column; gap: 10px; padding-bottom: 30px; }
-        .sub-btn { 
-            padding: 16px; border: 1px solid #EEE; border-radius: 15px; background: #fff; 
-            text-align: left; cursor: pointer; display: flex; flex-direction: column;
-        }
-        .sub-btn b { font-size: 0.95em; color: #007AFF; margin-bottom: 4px; }
-        .sub-btn span { font-size: 0.7em; color: #999; }
+        #sub-action-list { display: flex; flex-direction: column; gap: 8px; padding-bottom: 30px; }
+        .sub-btn { padding: 14px; border: 2px solid #F1F2F6; border-radius: 12px; background: #fff; text-align: left; cursor: pointer; }
+        .sub-btn b { font-size: 0.9em; color: var(--text); }
 
-        /* ナビゲーション */
-        #nav-bar { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid #EEE; background: #fff; flex-shrink: 0; }
-        .nav-item { padding: 15px; border: none; background: none; font-size: 0.85em; color: #9B918F; font-weight: bold; cursor: pointer; }
+        /* ナビ */
+        #nav-bar { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid #EEE; background: #fff; }
+        .nav-item { padding: 15px; border: none; background: none; cursor: pointer; font-size: 0.9em; color: #9B918F; font-weight: bold; }
 
-        /* デバッグモーダル */
-        .modal-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; display: none; justify-content: center; align-items: flex-end; }
-        .modal-content { width: 100%; height: 85%; background: white; border-radius: 30px 30px 0 0; display: flex; flex-direction: column; padding: 25px; animation: slideUp 0.3s ease-out; }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        .debug-scroll { flex: 1; overflow-y: auto; font-family: monospace; font-size: 0.8em; padding-top: 10px; }
-        .debug-section { margin-bottom: 20px; }
-        .debug-section h4 { margin: 10px 0; color: #FF4B5C; border-bottom: 1px solid #FFE6E6; padding-bottom: 4px; font-size: 0.9em; }
-        .debug-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px inset #FAFAFA; }
+        /* モーダル系 */
+        .modal { position: absolute; inset: 0; background: var(--bg); z-index: 50; display: none; flex-direction: column; padding: 20px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--secondary); padding-bottom: 10px; }
+        .modal-body { flex: 1; overflow-y: auto; }
+        .list-item { padding: 12px 10px; border-bottom: 1px solid #EEE; font-size: 0.9em; }
 
-        /* セットアップ画面 */
-        #setup-overlay { position: absolute; inset: 0; background: var(--primary); color: white; z-index: 300; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px; text-align: center; }
-        input, select { width: 100%; padding: 15px; border-radius: 15px; border: none; margin-bottom: 15px; font-size: 1em; }
+        #loading-overlay { position: absolute; inset: 0; background: rgba(255,255,255,0.9); z-index: 100; display: none; flex-direction: column; justify-content: center; align-items: center; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #FFE6E6; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        #setup-overlay { position: absolute; inset: 0; background: var(--primary); color: white; z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px; }
     </style>
 </head>
 <body>
 
 <div id="app-container">
-    <div id="debug-modal" class="modal-overlay">
-        <div class="modal-content">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h3 style="margin:0;">🛠 隠しパラメータ確認</h3>
-                <button onclick="toggleDebug(false)" style="border:none; background:#F0F0F0; padding:8px 15px; border-radius:10px; font-weight:bold;">閉じる</button>
-            </div>
-            <div class="debug-scroll" id="debug-viewer"></div>
-        </div>
-    </div>
-
     <div id="setup-overlay">
-        <h1 style="margin-bottom:10px;">THE LIFE</h1>
-        <input type="text" id="input-name" placeholder="なまえをいれてね">
-        <select id="input-gender">
+        <h1>✨ THE LIFE</h1>
+        <input type="text" id="input-name" style="width:80%; padding:15px; border-radius:15px; border:none; margin-bottom:10px;" placeholder="なまえ" maxlength="8">
+        <select id="input-gender" style="width:80%; padding:15px; border-radius:15px; border:none; margin-bottom:20px;">
             <option value="boy">おとこのこ 👦</option>
             <option value="girl">おんなのこ 👧</option>
         </select>
-        <button onclick="startGame()" style="width:100%; padding:18px; border-radius:30px; border:none; background:white; color:var(--primary); font-weight:bold; font-size:1.1em; cursor:pointer;">はじめる</button>
+        <button onclick="startGame()" style="padding:15px 40px; border-radius:30px; border:none; background:white; color:var(--primary); font-weight:bold;">はじめる</button>
+    </div>
+
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        <div id="loading-text" style="margin-top:10px; font-weight:bold;"></div>
     </div>
 
     <div id="header">
-        <div class="hero-info-top">
-            <div class="hero-name" id="display-name">---</div>
-            <div class="age-badge" id="display-age">---</div>
+        <div class="header-top">
+            <div id="display-date" class="date-badge">---</div>
+            <div style="font-size: 0.8em; opacity: 0.9;">THE LIFE SIM</div>
         </div>
-        <div class="date-badge" id="display-date">---</div>
     </div>
 
     <div id="status-bar">
-        <div class="stat-item">体力<b><span id="st-hp">0</span></b></div>
-        <div class="stat-item">知力<b><span id="st-int">0</span></b></div>
-        <div class="stat-item">感性<b><span id="st-sen">0</span></b></div>
-        <div class="stat-item">社交<b><span id="st-soc">0</span></b></div>
-        <div class="stat-item">精神<b><span id="st-mnt">0</span></b></div>
+        <div class="stat-item">体<b><span id="st-hp">0</span></b></div>
+        <div class="stat-item">知<b><span id="st-int">0</span></b></div>
+        <div class="stat-item">感<b><span id="st-sen">0</span></b></div>
+        <div class="stat-item">社<b><span id="st-soc">0</span></b></div>
+        <div class="stat-item">心<b><span id="st-mnt">0</span></b></div>
     </div>
 
     <div id="main-content">
-        <div id="visual-card">
-            <canvas id="player-canvas"></canvas>
+        <div id="hero-profile-card">
+            <div id="hero-visual-area">
+                <div id="hero-face-img"></div>
+            </div>
+            <div id="hero-detail-area">
+                <div class="hero-name" id="hero-name-label">---</div>
+                <div class="hero-sub-info" id="hero-age-label">---</div>
+                <div class="hero-sub-info" id="hero-job-label">---</div>
+                
+                <div class="gauge-container">
+                    <div class="gauge-label"><span>体調</span><span id="label-cond">100%</span></div>
+                    <div class="gauge-bg"><div id="fill-cond" class="gauge-fill fill-condition"></div></div>
+                </div>
+                
+                <div class="gauge-container">
+                    <div class="gauge-label"><span>疲労</span><span id="label-fatigue">0%</span></div>
+                    <div class="gauge-bg"><div id="fill-fatigue" class="gauge-fill fill-fatigue"></div></div>
+                </div>
+            </div>
         </div>
+
         <div class="section-title">✨ きょうは なにをする？ ✨</div>
         <div id="category-grid">
-            <button class="cat-btn" id="cat-study" onclick="selectCat('study', this)">📖 べんきょう</button>
-            <button class="cat-btn" id="cat-play" onclick="selectCat('play', this)">🧸 あそぶ</button>
-            <button class="cat-btn" id="cat-rest" onclick="selectCat('rest', this)">🛌 やすむ</button>
+            <button class="cat-btn" id="cat-study" onclick="selectCat('study', this)">📖 勉強</button>
+            <button class="cat-btn" id="cat-exercise" onclick="selectCat('exercise', this)">🏃 運動</button>
+            <button class="cat-btn" id="cat-play" onclick="selectCat('play', this)">🧸 遊び</button>
+            <button class="cat-btn" id="cat-love" onclick="selectCat('love', this)">❤️ 恋愛</button>
+            <button class="cat-btn" id="cat-work" onclick="selectCat('work', this)">💼 仕事</button>
+            <button class="cat-btn" id="cat-family" onclick="selectCat('family', this)">🏠 家庭</button>
+            <button class="cat-btn" id="cat-health" onclick="selectCat('health', this)">🩺 健康</button>
+            <button class="cat-btn" id="cat-hobby" onclick="selectCat('hobby', this)">🎨 趣味</button>
+            <button class="cat-btn" id="cat-rest" onclick="selectCat('rest', this)">🛌 休む</button>
         </div>
         <div id="sub-action-list"></div>
     </div>
 
     <div id="nav-bar">
-        <button class="nav-item">🗓️ よてい</button>
-        <button class="nav-item">📖 きろく</button>
-        <button class="nav-item" onclick="toggleDebug(true)">⚙️ せってい</button>
+        <button class="nav-item" onclick="showModal('calendar-modal')">🗓️ 予定</button>
+        <button class="nav-item" onclick="showModal('log-modal')">📖 記録</button>
+        <button class="nav-item" onclick="showModal('help-modal')">⚙️ 設定</button>
+    </div>
+
+    <div id="calendar-modal" class="modal">
+        <div class="modal-header"><h3>🗓️ カレンダー</h3><button onclick="closeModal()" style="border:none; background:none; font-size:1.5em;">×</button></div>
+        <div class="modal-body" id="calendar-list"></div>
+    </div>
+    <div id="log-modal" class="modal">
+        <div class="modal-header"><h3>📖 成長の記録</h3><button onclick="closeModal()" style="border:none; background:none; font-size:1.5em;">×</button></div>
+        <div class="modal-body" id="log-list"></div>
     </div>
 </div>
 
 <script>
+// --- ゲーム管理変数 ---
 let state = {
-    name: "", gender: "", age: 5, month: 0, week: 1, day: 1, isPM: false,
+    name: "", gender: "", age: 5, day: 1, isPM: false,
     params: { hp: 10, int: 10, sen: 10, soc: 10, mnt: 10 },
-    hiddenParams: {
-        "【筋肉】": { "pectorals": 10.0, "latissimus": 10.0, "biceps": 5.0, "quadriceps": 15.0, "innerMuscle": 10.0, "flexibility": 50.0, "burstPower": 20.0 },
-        "【学力】": { "linguistic": 10.0, "logical": 10.0, "spatial": 10.0, "musical": 5.0, "workingMemory": 50.0, "economicLiteracy": 0.0 },
-        "【性格】": { "openness": 50.0, "conscientiousness": 50.0, "extraversion": 50.0, "agreeableness": 50.0, "neuroticism": 30.0, "karma": 100.0, "resilience": 50.0 },
-        "【生活習慣】": { "skinCycle": 28.0, "cleanliness": 80.0, "posture": 100.0, "savingHabit": 50.0 }
-    }
+    fatigue: 0,   // 疲労度 (0-100)
+    condition: 100, // 体調 (0-100)
+    logs: [], actions: {}, events: {}, currentSeason: ""
 };
 
-const actionMaster = {
-    study: [
-        { label: 'ひらがな・カタカナ', sub: '知力・精神↑', main: { int: 1.2, mnt: 0.5 }, hidden: { "【学力】.linguistic": 2.0 } },
-        { label: 'かずのかぞえっこ', sub: '知力・精神↑', main: { int: 1.5 }, hidden: { "【学力】.logical": 2.0 } },
-        { label: 'えいごのおうた', sub: '知力・精神↑', main: { int: 1, sen: 0.5 }, hidden: { "【学力】.musical": 1.0 } }
-    ],
-    play: [
-        { label: 'おそとをはしる', sub: '体力・社交↑', main: { hp: 2, soc: 0.5 }, hidden: { "【筋肉】.quadriceps": 3.0 } },
-        { label: 'おえかき', sub: '感性・知力↑', main: { sen: 2, int: 0.5 }, hidden: { "【学力】.spatial": 2.0 } }
-    ],
-    rest: [
-        { label: 'おひるね', sub: 'つかれを回復', main: {}, hidden: { "【生活習慣】.skinCycle": -0.1 } }
-    ]
+const weakDays = ["日", "月", "火", "水", "木", "金", "土"];
+
+// カテゴリ表示条件 (年齢によるフィルタ)
+const categoryConfig = {
+    study:    { min: 5,  max: 25 },
+    exercise: { min: 6,  max: 80 },
+    play:     { min: 5,  max: 15 },
+    love:     { min: 12, max: 80 },
+    work:     { min: 16, max: 70 },
+    family:   { min: 20, max: 80 },
+    health:   { min: 35, max: 80 },
+    hobby:    { min: 8,  max: 80 },
+    rest:     { min: 5,  max: 80 }
 };
 
-function startGame() {
-    state.name = document.getElementById('input-name').value || "ななし";
+// 学年・職業の判定
+function getJobLabel() {
+    if (state.age < 6) return "幼稚園";
+    if (state.age < 12) return `小学校 ${state.age - 5}年生`;
+    if (state.age < 15) return `中学校 ${state.age - 11}年生`;
+    if (state.age < 18) return `高校 ${state.age - 14}年生`;
+    return "大学生/就職";
+}
+
+// --- 初期化 & データロード ---
+async function startGame() {
+    const n = document.getElementById('input-name').value;
+    if(!n) return alert("名前を入力してね！");
+    state.name = n;
     state.gender = document.getElementById('input-gender').value;
+    
+    await updateSeasonData();
     document.getElementById('setup-overlay').style.display = "none";
-    selectCat('study', document.getElementById('cat-study'));
+    
+    refreshCategoryButtons();
+    updateVisuals();
+    initCalendarUI();
+    
+    // 最初のカテゴリを選択状態にする
+    const firstBtn = document.querySelector('.cat-btn.visible');
+    if(firstBtn) firstBtn.click();
+    
     render();
 }
 
-function updateHidden(path, val) {
-    let parts = path.split('.');
-    if(state.hiddenParams[parts[0]] && state.hiddenParams[parts[0]][parts[1]] !== undefined) {
-        state.hiddenParams[parts[0]][parts[1]] += val;
+// データロード分岐
+async function updateSeasonData() {
+    let season = (state.age <= 10) ? "seasonone" : "seasontwo";
+    if (state.currentSeason !== season) {
+        state.currentSeason = season;
+        try {
+            const [actRes, evtRes] = await Promise.all([
+                fetch(`./date/${season}.json`),
+                fetch(`./event/${season}.json`)
+            ]);
+            state.actions = await actRes.json();
+            state.events = await evtRes.json();
+        } catch (e) { console.error("Data Load Error", e); }
     }
 }
 
-function doAction(cat, idx) {
-    const act = actionMaster[cat][idx];
-    for(let k in act.main) state.params[k] += act.main[k];
-    for(let p in act.hidden) updateHidden(p, act.hidden[p]);
-
-    if(state.isPM) {
-        state.day++; state.isPM = false;
-        if(state.day > 7) { state.day = 1; state.week++; }
-        if(state.week > 4) { state.week = 1; state.month++; }
-        if(state.month >= 12) { state.month = 0; state.age++; }
-    } else { state.isPM = true; }
-    render();
+// 年齢・性別に応じて画像と背景を変更
+function updateVisuals() {
+    const player = document.getElementById('hero-face-img');
+    let ageGroup = state.age < 12 ? "child" : (state.age < 20 ? "teen" : "adult");
+    
+    player.style.backgroundImage = `url('./images/prayer/${state.gender}_${ageGroup}.png')`;
 }
 
 function render() {
-    document.getElementById('display-name').innerText = `${state.name} （${state.gender === 'boy' ? 'おとこのこ' : 'おんなのこ'}）`;
-    const wd = ["日", "月", "火", "水", "木", "金", "土"][(state.day + 2) % 7];
-    document.getElementById('display-date').innerText = `4月${state.day}日(${wd}) ${state.isPM ? 'PM' : 'AM'}`;
-    document.getElementById('display-age').innerText = `${state.age}歳 ${state.month}ヶ月 ${state.week}週 ${state.day}日`;
+    // パラメータ更新
+    for (let k in state.params) document.getElementById('st-'+k).innerText = Math.floor(state.params[k]);
+    
+    // プロフィーエリア更新
+    document.getElementById('hero-name-label').innerText = `${state.name} (${state.gender === 'boy' ? 'くん' : 'ちゃん'})`;
+    document.getElementById('hero-age-label').innerText = `${state.age}歳 0ヶ月 1週 ${((state.day-1)%7)+1}日目`;
+    document.getElementById('hero-job-label').innerText = getJobLabel();
+    
+    // ゲージ更新
+    document.getElementById('fill-fatigue').style.width = state.fatigue + "%";
+    document.getElementById('label-fatigue').innerText = Math.floor(state.fatigue) + "%";
+    document.getElementById('fill-cond').style.width = state.condition + "%";
+    document.getElementById('label-cond').innerText = Math.floor(state.condition) + "%";
+    
+    // 日付更新
+    const wd = weakDays[(state.day + 2) % 7];
+    document.getElementById('display-date').innerText = `4月${state.day}日(${wd}) ${state.isPM?'PM':'AM'}`;
+}
 
-    for (let k in state.params) {
-        let el = document.getElementById('st-' + k);
-        if(el) el.innerText = Math.floor(state.params[k]);
+// 年齢に応じてカテゴリボタンを出し分け
+function refreshCategoryButtons() {
+    for (const [key, range] of Object.entries(categoryConfig)) {
+        const btn = document.getElementById(`cat-${key}`);
+        if (state.age >= range.min && state.age <= range.max) btn.classList.add('visible');
+        else { btn.classList.remove('visible'); btn.classList.remove('active'); }
     }
-    drawVisual();
 }
 
-// 修正された描画ロジック
-function drawVisual() {
-    const canvas = document.getElementById('player-canvas');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const img = new Image();
-    
-    // パスを GitHub の構造に合わせました
-    const basePath = "images/prayer/";
-    img.src = state.gender === "boy" ? basePath + "boy_child.png" : basePath + "girl_child.png";
-
-    img.onload = function() {
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0);
-    };
-    
-    img.onerror = function() {
-        console.error("画像が見つかりません。パスを確認してください: " + img.src);
-    };
-}
-
+let currentCat = '';
 function selectCat(cat, btn) {
+    currentCat = cat;
     document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
+    
     const list = document.getElementById('sub-action-list');
-    list.innerHTML = actionMaster[cat].map((s, i) => `
-        <button class="sub-btn" onclick="doAction('${cat}', ${i})">
-            <b>${s.label}</b>
-            <span>${s.sub}</span>
-        </button>
+    const subActions = state.actions[cat] || [];
+    
+    list.innerHTML = subActions.length > 0 
+        ? subActions.map((s, i) => `<button class="sub-btn" onclick="doAction(${i})"><b>${s.label}</b></button>`).join('')
+        : `<div style="text-align:center; padding:20px; color:#ccc;">アクションがありません</div>`;
+}
+
+// 行動実行
+async function doAction(idx) {
+    const sub = state.actions[currentCat][idx];
+    const overlay = document.getElementById('loading-overlay');
+    document.getElementById('loading-text').innerText = `${sub.label} 中...`;
+    overlay.style.display = "flex";
+
+    setTimeout(async () => {
+        // パラメータ更新
+        for(let k in sub.effect) state.params[k] += sub.effect[k];
+        state.logs.unshift({ date: document.getElementById('display-date').innerText, act: sub.label, nar: sub.desc });
+        
+        // --- 疲労ロジック実装 ---
+        // 休み以外のアクションは疲労が増える。休みは疲労が減り、体調が回復する。
+        if(currentCat === 'rest') {
+            state.fatigue = Math.max(0, state.fatigue - 30); // 疲労回復
+            state.condition = Math.min(100, state.condition + 10); // 体調回復
+        } else {
+            state.fatigue = Math.min(100, state.fatigue + 15); // 疲労増加
+            // 疲労が一定以上だと体調が下がり始める
+            if(state.fatigue > 80) state.condition = Math.max(0, state.condition - 5);
+        }
+
+        // 時間進行
+        if(state.isPM) { 
+            state.day++; 
+            state.isPM = false; 
+            
+            // 簡易的な加齢チェック（例：30日で1歳上がるデモ。本来は誕生日等で判定）
+            if(state.day > 30) {
+                state.day = 1;
+                state.age++;
+                alert(`${state.age}歳になりました！環境が変わります。`);
+                await updateSeasonData();
+                refreshCategoryButtons();
+                updateVisuals();
+                initCalendarUI();
+            }
+        } else { 
+            state.isPM = true; 
+        }
+        
+        overlay.style.display = "none";
+        render();
+        updateLogUI();
+    }, 600);
+}
+
+function updateLogUI() {
+    document.getElementById('log-list').innerHTML = state.logs.map(l => `
+        <div class="list-item"><small>${l.date}</small><br><b>${l.act}</b><br><span style="font-size:0.85em; color:#666">${l.nar}</span></div>
     `).join('');
 }
 
-function toggleDebug(show) {
-    const modal = document.getElementById('debug-modal');
-    modal.style.display = show ? "flex" : "none";
-    if(show) {
-        let html = "";
-        for(let sec in state.hiddenParams) {
-            html += `<div class="debug-section"><h4>${sec}</h4>`;
-            for(let p in state.hiddenParams[sec]) {
-                html += `<div class="debug-row"><span>${p}</span><b>${state.hiddenParams[sec][p].toFixed(2)}</b></div>`;
-            }
-            html += `</div>`;
-        }
-        document.getElementById('debug-viewer').innerHTML = html;
+function initCalendarUI() {
+    const list = document.getElementById('calendar-list');
+    list.innerHTML = "";
+    if(!state.events.calendar) return;
+    for(let d=1; d<=30; d++){
+        const wd = weakDays[(d + 2) % 7];
+        const ev = state.events.calendar[d] || "---";
+        list.innerHTML += `<div class="list-item"><b>4/${d}(${wd})</b> - ${ev}</div>`;
     }
 }
+
+function showModal(id) { document.getElementById(id).style.display = "flex"; }
+function closeModal() { document.querySelectorAll('.modal').forEach(m => m.style.display = "none"); }
 </script>
 </body>
 </html>
