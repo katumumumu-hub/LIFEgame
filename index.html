@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>THE LIFE - Debug Edition</title>
+    <title>THE LIFE - Final Fix</title>
     <style>
         :root {
             --primary: #FF9AA2;
@@ -11,7 +11,6 @@
             --bg: #FFFDF9;
             --text: #5D514E;
             --card: #FFFFFF;
-            --radius: 25px;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -37,7 +36,7 @@
             background: #FFF5F5; padding: 10px 5px; margin: 10px 15px;
             border-radius: 15px; border: 1px solid #FFEDEE; flex-shrink: 0;
         }
-        .stat-item { text-align: center; font-size: 0.7em; color: #887C79; }
+        .stat-item { text-align: center; font-size: 0.7em; }
         .stat-item b { display: block; font-size: 1.2em; color: var(--primary-dark); }
 
         /* プロフィールカード (左:画像 / 右:詳細) */
@@ -47,9 +46,10 @@
         }
         #hero-visual-area {
             width: 45%; background: #FFF9F9; display: flex; justify-content: center; align-items: flex-end;
-            border-right: 1px solid #F1F2F6; padding-bottom: 5px;
+            border-right: 1px solid #F1F2F6;
         }
-        #player-canvas { max-width: 100%; max-height: 100%; object-fit: contain; }
+        /* Canvasをやめ、imgタグで確実に表示 */
+        #hero-img { max-width: 100%; max-height: 100%; object-fit: contain; }
 
         #hero-detail-area { width: 55%; padding: 12px; display: flex; flex-direction: column; gap: 4px; }
         .hero-name { font-weight: bold; font-size: 1em; color: var(--primary-dark); }
@@ -75,32 +75,31 @@
         .cat-btn.active { border-color: var(--primary); color: var(--primary); background: #FFF5F5; }
 
         #sub-action-list { display: flex; flex-direction: column; gap: 8px; padding-bottom: 20px; }
-        .sub-btn { padding: 15px; border: 1px solid #EEE; border-radius: 12px; background: #fff; text-align: left; cursor: pointer; }
+        .sub-btn { padding: 15px; border: 1px solid #EEE; border-radius: 12px; background: #fff; text-align: left; cursor: pointer; font-size: 0.9em; }
 
-        /* ナビ */
+        /* ナビゲーション */
         #nav-bar { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid #EEE; background: #fff; flex-shrink: 0; }
         .nav-item { padding: 15px; border: none; background: none; font-size: 0.85em; color: #9B918F; font-weight: bold; cursor: pointer; }
 
-        /* 復活させた隠しパラメータ用モーダル */
-        .modal-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; display: none; justify-content: center; align-items: flex-end; }
-        .modal-content { width: 100%; height: 85%; background: white; border-radius: 25px 25px 0 0; display: flex; flex-direction: column; padding: 25px; animation: slideUp 0.3s ease-out; }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        .debug-scroll { flex: 1; overflow-y: auto; font-family: monospace; font-size: 0.8em; }
+        /* デバッグモーダル */
+        #debug-modal { position: absolute; inset: 0; background: rgba(0,0,0,0.6); z-index: 500; display: none; justify-content: center; align-items: flex-end; }
+        .modal-content { width: 100%; height: 85%; background: white; border-radius: 25px 25px 0 0; display: flex; flex-direction: column; padding: 25px; box-shadow: 0 -5px 15px rgba(0,0,0,0.1); }
+        .debug-scroll { flex: 1; overflow-y: auto; font-family: monospace; font-size: 0.8em; margin-top: 10px; }
         .debug-section { margin-bottom: 15px; }
-        .debug-section h4 { margin: 10px 0 5px; color: #FF4B5C; border-bottom: 1px solid #FFE6E6; padding-bottom: 2px; }
+        .debug-section h4 { margin: 10px 0 5px; color: #FF4B5C; border-bottom: 1px solid #FFE6E6; }
         .debug-row { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px inset #FAFAFA; }
 
-        #setup-overlay { position: absolute; inset: 0; background: var(--primary); color: white; z-index: 300; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px; text-align: center; }
+        #setup-overlay { position: absolute; inset: 0; background: var(--primary); color: white; z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px; text-align: center; }
     </style>
 </head>
 <body>
 
 <div id="app-container">
-    <div id="debug-modal" class="modal-overlay">
+    <div id="debug-modal">
         <div class="modal-content">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
                 <h3 style="margin:0;">🛠 隠しパラメータ確認</h3>
-                <button onclick="toggleDebug(false)" style="border:none; background:#F0F0F0; padding:8px 15px; border-radius:10px; font-weight:bold;">閉じる</button>
+                <button onclick="toggleDebug(false)" style="border:none; background:#F0F0F0; padding:8px 15px; border-radius:10px; font-weight:bold; cursor:pointer;">閉じる</button>
             </div>
             <div class="debug-scroll" id="debug-viewer"></div>
         </div>
@@ -108,12 +107,12 @@
 
     <div id="setup-overlay">
         <h2 style="margin-bottom:20px;">THE LIFE</h2>
-        <input type="text" id="input-name" placeholder="なまえ" style="width:100%; padding:15px; border-radius:15px; border:none; margin-bottom:10px;">
-        <select id="input-gender" style="width:100%; padding:15px; border-radius:15px; border:none; margin-bottom:20px;">
+        <input type="text" id="input-name" placeholder="なまえ" style="width:100%; padding:15px; border-radius:15px; border:none; margin-bottom:10px; font-size:1em;">
+        <select id="input-gender" style="width:100%; padding:15px; border-radius:15px; border:none; margin-bottom:20px; font-size:1em;">
             <option value="boy">おとこのこ 👦</option>
             <option value="girl">おんなのこ 👧</option>
         </select>
-        <button onclick="startGame()" style="width:100%; padding:18px; border-radius:30px; border:none; background:white; color:var(--primary); font-weight:bold;">はじめる</button>
+        <button onclick="startGame()" style="width:100%; padding:18px; border-radius:30px; border:none; background:white; color:var(--primary); font-weight:bold; cursor:pointer;">はじめる</button>
     </div>
 
     <div id="header">
@@ -132,7 +131,7 @@
     <div id="main-content">
         <div id="hero-profile-card">
             <div id="hero-visual-area">
-                <canvas id="player-canvas"></canvas>
+                <img id="hero-img" src="" alt="主人公">
             </div>
             <div id="hero-detail-area">
                 <div class="hero-name" id="display-name">---</div>
@@ -152,9 +151,9 @@
 
         <div class="section-title">✨ きょうは なにをする？ ✨</div>
         <div id="category-grid">
-            <button class="cat-btn" id="cat-study" onclick="selectCat('study', this)">📖 べんきょう</button>
-            <button class="cat-btn" id="cat-play" onclick="selectCat('play', this)">🧸 あそぶ</button>
-            <button class="cat-btn" id="cat-rest" onclick="selectCat('rest', this)">🛌 やすむ</button>
+            <button class="cat-btn" id="cat-study" onclick="selectCat('study', this)">📖 勉強</button>
+            <button class="cat-btn" id="cat-play" onclick="selectCat('play', this)">🧸 遊び</button>
+            <button class="cat-btn" id="cat-rest" onclick="selectCat('rest', this)">🛌 休み</button>
         </div>
         <div id="sub-action-list"></div>
     </div>
@@ -167,39 +166,42 @@
 </div>
 
 <script>
-// --- ゲームデータ ---
 let state = {
-    name: "", gender: "", age: 5, month: 0, week: 1, day: 1, isPM: false,
+    name: "", gender: "", age: 5, month: 0, day: 1, isPM: false,
     params: { hp: 10, int: 10, sen: 10, soc: 10, mnt: 10 },
     fatigue: 0, condition: 100,
     hiddenParams: {
-        "【筋肉】": { "pectorals": 10.0, "latissimus": 10.0, "biceps": 5.0, "quadriceps": 15.0, "innerMuscle": 10.0, "flexibility": 50.0 },
+        "【筋肉】": { "pectorals": 10.0, "latissimus": 10.0, "biceps": 5.0, "quadriceps": 15.0 },
         "【学力】": { "linguistic": 10.0, "logical": 10.0, "spatial": 10.0, "workingMemory": 50.0 },
-        "【性格】": { "openness": 50.0, "conscientiousness": 50.0, "extraversion": 50.0, "agreeableness": 50.0, "neuroticism": 30.0, "karma": 100.0 },
+        "【性格】": { "openness": 50.0, "conscientiousness": 50.0, "extraversion": 50.0 },
         "【生活習慣】": { "skinCycle": 28.0, "cleanliness": 80.0, "posture": 100.0 }
     }
 };
 
-const actions = {
+const actionData = {
     study: [
-        { label: 'こくご・おんどく', effect: { int: 1.2, mnt: 0.5 }, hidden: "【学力】.linguistic", hVal: 1.5, fatigue: 10 },
-        { label: 'さんすう・けいさん', effect: { int: 1.5 }, hidden: "【学力】.logical", hVal: 2.0, fatigue: 12 },
-        { label: 'ずかん・じゆうちょう', effect: { int: 0.8, sen: 1.0 }, hidden: "【学力】.spatial", hVal: 1.2, fatigue: 8 }
+        { label: 'こくご・おんどく', effect: { int: 1.2 }, hidden: "【学力】.linguistic", hVal: 1.5, f: 10 },
+        { label: 'さんすう・けいさん', effect: { int: 1.5 }, hidden: "【学力】.logical", hVal: 2.0, f: 12 }
     ],
     play: [
-        { label: 'おそとをはしる', effect: { hp: 2.0, soc: 0.5 }, hidden: "【筋肉】.quadriceps", hVal: 3.0, fatigue: 15 },
-        { label: 'おえかき', effect: { sen: 2.0 }, hidden: "【学力】.spatial", hVal: 1.5, fatigue: 5 }
+        { label: 'おそとをはしる', effect: { hp: 2.0 }, hidden: "【筋肉】.quadriceps", hVal: 3.0, f: 15 },
+        { label: 'おえかき', effect: { sen: 2.0 }, hidden: "【学力】.spatial", hVal: 1.5, f: 5 }
     ],
     rest: [
-        { label: 'おひるね', effect: {}, hidden: "【生活習慣】.skinCycle", hVal: -0.1, fatigue: -30 }
+        { label: 'おひるね', effect: {}, hidden: "【生活習慣】.skinCycle", hVal: -0.1, f: -30 }
     ]
 };
 
-// --- コア機能 ---
 function startGame() {
     state.name = document.getElementById('input-name').value || "ななし";
     state.gender = document.getElementById('input-gender').value;
     document.getElementById('setup-overlay').style.display = "none";
+    // 画像パスを確定（GitHubの images/prayer/ フォルダにある場合）
+    const path = "images/prayer/";
+    document.getElementById('hero-img').src = state.gender === 'boy' ? path + 'boy_child.png' : path + 'girl_child.png';
+    // もしルート直下にある場合はこちら:
+    // document.getElementById('hero-img').src = state.gender === 'boy' ? '画像1.png' : '画像2.png';
+    
     selectCat('study', document.getElementById('cat-study'));
     render();
 }
@@ -208,70 +210,37 @@ function selectCat(cat, btn) {
     document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     const list = document.getElementById('sub-action-list');
-    list.innerHTML = actions[cat].map((a, i) => `
-        <button class="sub-btn" onclick="doAction('${cat}', ${i})"><b>${a.label}</b></button>
-    `).join('');
+    list.innerHTML = actionData[cat].map((a, i) => `<button class="sub-btn" onclick="doAction('${cat}', ${i})"><b>${a.label}</b></button>`).join('');
 }
 
 function doAction(cat, idx) {
-    const a = actions[cat][idx];
-    // パラメータ反映
+    const a = actionData[cat][idx];
     for(let k in a.effect) state.params[k] += a.effect[k];
-    
-    // 隠しパラメータ反映
     if(a.hidden) {
-        let [sec, key] = a.hidden.split('.');
-        state.hiddenParams[sec][key] += a.hVal;
+        let [s, k] = a.hidden.split('.');
+        state.hiddenParams[s][k] += a.hVal;
     }
-
-    // 疲労・時間
-    state.fatigue = Math.min(100, Math.max(0, state.fatigue + a.fatigue));
+    state.fatigue = Math.min(100, Math.max(0, state.fatigue + a.f));
+    
     if(state.isPM) {
         state.day++; state.isPM = false;
         if(state.day > 30) { state.day = 1; state.month++; }
         if(state.month >= 12) { state.month = 0; state.age++; }
-    } else {
-        state.isPM = true;
-    }
+    } else { state.isPM = true; }
     render();
 }
 
 function render() {
-    // 日付・プロフィール
     const wd = ["日", "月", "火", "水", "木", "金", "土"][(state.day + 2) % 7];
     document.getElementById('display-date-top').innerText = `4月${state.day}日(${wd}) ${state.isPM ? 'PM' : 'AM'}`;
     document.getElementById('display-name').innerText = `${state.name} (${state.gender === 'boy' ? 'おとこのこ' : 'おんなのこ'})`;
     document.getElementById('display-age').innerText = `${state.age}歳 ${state.month}ヶ月 1週 ${((state.day-1)%7)+1}日`;
     document.getElementById('display-job').innerText = state.age < 6 ? "幼稚園" : `小学校 ${state.age-5}年生`;
-
-    // ゲージ
     document.getElementById('fill-fatigue').style.width = state.fatigue + "%";
     document.getElementById('label-fatigue').innerText = state.fatigue + "%";
-    document.getElementById('fill-cond').style.width = state.condition + "%";
-
-    // 表ステータス
-    for(let k in state.params) {
-        document.getElementById('st-'+k).innerText = Math.floor(state.params[k]);
-    }
-
-    drawHero();
+    for(let k in state.params) document.getElementById('st-'+k).innerText = Math.floor(state.params[k]);
 }
 
-function drawHero() {
-    const canvas = document.getElementById('player-canvas');
-    const ctx = canvas.getContext('2d');
-    const img = new Image();
-    // ユーザー提供のファイル名に合わせる
-    img.src = state.gender === 'boy' ? '画像1.png' : '画像2.png';
-    img.onload = () => {
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctx.clearRect(0,0,canvas.width,canvas.height);
-        ctx.drawImage(img, 0, 0);
-    };
-}
-
-// 復活させたデバッグ機能
 function toggleDebug(show) {
     const modal = document.getElementById('debug-modal');
     modal.style.display = show ? "flex" : "none";
