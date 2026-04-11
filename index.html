@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>植物図鑑アプリ - 時間連動版</title>
+  <title>植物図鑑アプリ - 時間連動・画像切替版</title>
   <style>
     body {
       font-family: 'Helvetica Neue', Arial, sans-serif;
@@ -55,7 +55,7 @@
       max-height: 70%;
     }
 
-    /* ステータス表示 */
+    /* ステータスパネル */
     .status-panel {
       background-color: #f9f9f9;
       padding: 10px;
@@ -115,7 +115,7 @@
   <div id="current-time" class="time-display">00:00:00</div>
 
   <div id="pot-area">
-    <img id="plant-image" src="seed.png" alt="植物" style="display: none;">
+    <img id="plant-image" src="tanehati.PNG" alt="植物" style="display: none;">
   </div>
 
   <div class="status-panel">
@@ -146,7 +146,7 @@
     { id: 3, name: "ツキミソウ", image: "plant_03.png", condition: { preferred_time: "night" } }
   ];
 
-  let saveData = JSON.parse(localStorage.getItem('plantAppSave_v2')) || {
+  let saveData = JSON.parse(localStorage.getItem('plantAppSave_v3')) || {
     active_pot: { is_occupied: false, last_watered_at: null, total_water_count: 0, time_stats: { morning: 0, day: 0, night: 0 } },
     encyclopedia: { unlocked_plant_ids: [] }
   };
@@ -159,6 +159,8 @@
   const btnWater = document.getElementById('btn-water');
   const btnPlant = document.getElementById('btn-plant');
   const bookGrid = document.getElementById('book-grid');
+
+  const WATER_GOAL = 3; // 進化に必要な水やりの回数
 
   // --- 機能：時計の更新 ---
   function updateClock() {
@@ -180,11 +182,11 @@
     const pot = saveData.active_pot;
     if (pot.is_occupied) {
       elImage.style.display = "block";
-      elImage.src = "seed.png";
+      elImage.src = "tanehati.PNG"; // 種を植えたらhanehati.PNG
       btnWater.style.display = "block";
       btnPlant.disabled = true;
       elLastWatered.innerText = formatTimestamp(pot.last_watered_at);
-      elGrowth.innerText = `水やり ${pot.total_water_count} / 3回`;
+      elGrowth.innerText = `水やり ${pot.total_water_count} / ${WATER_GOAL}回`;
     } else {
       elImage.style.display = "none";
       btnWater.style.display = "none";
@@ -193,7 +195,7 @@
       elGrowth.innerText = "種を待っています";
     }
     drawEncyclopedia();
-    localStorage.setItem('plantAppSave_v2', JSON.stringify(saveData));
+    localStorage.setItem('plantAppSave_v3', JSON.stringify(saveData));
   }
 
   // --- イベント：種を植える ---
@@ -209,6 +211,11 @@
 
   // --- イベント：水やり ---
   btnWater.addEventListener('click', () => {
+    // 現在の画像のsrcを保存しておく（1秒後に戻すため）
+    const originalSrc = elImage.src;
+    // ジョウロ画像を表示
+    elImage.src = "joro.PNG";
+
     const now = new Date();
     const hr = now.getHours();
     
@@ -220,11 +227,16 @@
     saveData.active_pot.last_watered_at = Date.now();
     saveData.active_pot.total_water_count++;
 
-    if (saveData.active_pot.total_water_count >= 3) {
-      evolve();
-    } else {
-      updateUI();
-    }
+    // 1秒（1000ミリ秒）後に元の画像に戻す
+    setTimeout(() => {
+      elImage.src = originalSrc;
+      // 元に戻した後、進化判定を行う
+      if (saveData.active_pot.total_water_count >= WATER_GOAL) {
+        evolve();
+      } else {
+        updateUI();
+      }
+    }, 1000); // 1秒表示
   });
 
   function evolve() {
