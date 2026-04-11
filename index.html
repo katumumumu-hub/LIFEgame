@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>植物図鑑アプリ - 時間連動・画像切替版</title>
+  <title>植物図鑑アプリ - 演出・図鑑詳細追加版</title>
   <style>
     body {
       font-family: 'Helvetica Neue', Arial, sans-serif;
@@ -21,6 +21,7 @@
       box-shadow: 0 0 20px rgba(0,0,0,0.1);
       padding: 20px;
       box-sizing: border-box;
+      position: relative;
     }
 
     /* 時間表示エリア */
@@ -33,69 +34,40 @@
       margin-bottom: 15px;
       font-size: 1.2rem;
     }
-    .info-text {
-      font-size: 0.9rem;
-      color: #666;
-      margin-bottom: 5px;
-    }
+    .info-text { font-size: 0.9rem; color: #666; margin-bottom: 5px; }
 
-    /* 育成エリア */
+    /* 育成エリア (余白を完全に排除) */
     #pot-area {
       height: 220px;
-      background: linear-gradient(to bottom, #eef7ee, #dceddc);
       border-radius: 15px;
       display: flex;
       justify-content: center;
       align-items: center;
       margin-bottom: 15px;
       border: 2px dashed #ccc;
+      overflow: hidden; /* エリア外にはみ出た部分を隠す */
+      padding: 0;       /* パディングを削除 */
     }
     #plant-image {
-      max-width: 70%;
-      max-height: 70%;
+      width: 100%;
+      height: 100%;
+      object-fit: cover; /* 画像の比率を保ったままエリア全体を埋める（余白なし） */
     }
 
     /* ステータスパネル */
-    .status-panel {
-      background-color: #f9f9f9;
-      padding: 10px;
-      border-radius: 10px;
-      margin-bottom: 20px;
-      text-align: left;
-    }
-    .status-item {
-      display: flex;
-      justify-content: space-between;
-      border-bottom: 1px solid #eee;
-      padding: 5px 0;
-    }
+    .status-panel { background-color: #f9f9f9; padding: 10px; border-radius: 10px; margin-bottom: 20px; text-align: left; }
+    .status-item { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding: 5px 0; }
 
-    button {
-      padding: 15px;
-      font-size: 16px;
-      border: none;
-      border-radius: 50px;
-      cursor: pointer;
-      margin: 5px 0;
-      font-weight: bold;
-      width: 100%;
-      transition: transform 0.1s;
-    }
+    /* ボタン */
+    button { padding: 15px; font-size: 16px; border: none; border-radius: 50px; cursor: pointer; margin: 5px 0; font-weight: bold; width: 100%; transition: transform 0.1s; }
     button:active { transform: scale(0.98); }
     #btn-water { background-color: #2196F3; color: white; }
     #btn-plant { background-color: #4CAF50; color: white; }
     #btn-plant:disabled { background-color: #ccc; }
 
-    #encyclopedia {
-      margin-top: 30px;
-      border-top: 2px solid #eee;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 5px;
-      margin-top: 10px;
-    }
+    /* 図鑑エリア */
+    #encyclopedia { margin-top: 30px; border-top: 2px solid #eee; }
+    .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-top: 10px; }
     .grid-item {
       aspect-ratio: 1 / 1;
       background-color: #eee;
@@ -104,8 +76,66 @@
       justify-content: center;
       align-items: center;
       font-size: 10px;
+      position: relative;
     }
-    .grid-item img { width: 90%; }
+    .grid-item img { width: 100%; height: 100%; object-fit: cover; border-radius: 5px; }
+    .grid-item.unlocked { cursor: pointer; }
+
+    /* 図鑑の「NEW」演出 */
+    @keyframes newPop {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7); }
+      50% { transform: scale(1.05); box-shadow: 0 0 15px 5px rgba(255, 215, 0, 0.7); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); }
+    }
+    .is-new {
+      animation: newPop 1.5s infinite;
+      border: 2px solid #FFD700;
+      z-index: 2;
+    }
+    .is-new::after {
+      content: "NEW!";
+      position: absolute;
+      top: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #FF5722;
+      color: white;
+      font-size: 10px;
+      font-weight: bold;
+      padding: 2px 6px;
+      border-radius: 10px;
+      white-space: nowrap;
+    }
+
+    /* モーダル (詳細画面) */
+    #plant-modal {
+      display: none;
+      position: fixed;
+      z-index: 100;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-content {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 15px;
+      width: 80%;
+      max-width: 300px;
+      text-align: center;
+      position: relative;
+      animation: fadeIn 0.2s ease-out;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .close-btn { position: absolute; top: 10px; right: 15px; font-size: 24px; color: #999; cursor: pointer; }
+    #modal-img { width: 150px; height: 150px; object-fit: contain; margin-bottom: 10px; }
+    #modal-title { font-size: 1.2rem; margin: 0 0 10px 0; color: #333; }
+    #modal-desc { font-size: 0.9rem; color: #666; text-align: left; line-height: 1.5; margin: 0; }
+
   </style>
 </head>
 <body>
@@ -119,14 +149,8 @@
   </div>
 
   <div class="status-panel">
-    <div class="status-item">
-      <span>前回の水やり:</span>
-      <span id="last-watered-time">なし</span>
-    </div>
-    <div class="status-item">
-      <span>成長具合:</span>
-      <span id="growth-status">-</span>
-    </div>
+    <div class="status-item"><span>前回の水やり:</span><span id="last-watered-time">なし</span></div>
+    <div class="status-item"><span>成長具合:</span><span id="growth-status">-</span></div>
   </div>
 
   <button id="btn-water" style="display: none;">お水をあげる 💧</button>
@@ -138,20 +162,30 @@
   </div>
 </div>
 
+<div id="plant-modal">
+  <div class="modal-content">
+    <span class="close-btn" onclick="closeModal()">&times;</span>
+    <img id="modal-img" src="" alt="">
+    <h2 id="modal-title"></h2>
+    <p id="modal-desc"></p>
+  </div>
+</div>
+
 <script>
-  // --- データ定義 ---
+  // --- データ定義 (説明文を追加) ---
   const plant_master = [
-    { id: 1, name: "朝のアサガオ", image: "plant_01.png", condition: { preferred_time: "morning" } },
-    { id: 2, name: "サボテン", image: "plant_02.png", condition: { preferred_time: "day" } },
-    { id: 3, name: "ツキミソウ", image: "plant_03.png", condition: { preferred_time: "night" } }
+    { id: 1, name: "朝のアサガオ", image: "plant_01.png", description: "朝にたくさん水をもらって元気に育った花。早起きのご褒美。", condition: { preferred_time: "morning" } },
+    { id: 2, name: "サボテン", image: "plant_02.png", description: "水やりの間隔が長くても、たくましく育った乾燥に強い植物。", condition: { preferred_time: "day" } },
+    { id: 3, name: "ツキミソウ", image: "plant_03.png", description: "夜遅い時間にひっそりと水を飲んで育った花。月明かりが似合う。", condition: { preferred_time: "night" } }
   ];
 
-  let saveData = JSON.parse(localStorage.getItem('plantAppSave_v3')) || {
+  let saveData = JSON.parse(localStorage.getItem('plantAppSave_v4')) || {
     active_pot: { is_occupied: false, last_watered_at: null, total_water_count: 0, time_stats: { morning: 0, day: 0, night: 0 } },
     encyclopedia: { unlocked_plant_ids: [] }
   };
 
-  // --- 要素取得 ---
+  let newlyUnlockedId = null; // 新しく登録された植物のIDを一時保存
+
   const elCurrentTime = document.getElementById('current-time');
   const elLastWatered = document.getElementById('last-watered-time');
   const elGrowth = document.getElementById('growth-status');
@@ -159,10 +193,10 @@
   const btnWater = document.getElementById('btn-water');
   const btnPlant = document.getElementById('btn-plant');
   const bookGrid = document.getElementById('book-grid');
+  const modal = document.getElementById('plant-modal');
 
-  const WATER_GOAL = 3; // 進化に必要な水やりの回数
+  const WATER_GOAL = 3; 
 
-  // --- 機能：時計の更新 ---
   function updateClock() {
     const now = new Date();
     elCurrentTime.innerText = now.toLocaleTimeString('ja-JP', { hour12: false });
@@ -170,19 +204,17 @@
   setInterval(updateClock, 1000);
   updateClock();
 
-  // --- 機能：日付のフォーマット ---
   function formatTimestamp(ts) {
     if (!ts) return "なし";
     const d = new Date(ts);
     return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
   }
 
-  // --- 機能：UI更新 ---
   function updateUI() {
     const pot = saveData.active_pot;
     if (pot.is_occupied) {
       elImage.style.display = "block";
-      elImage.src = "tanehati.PNG"; // 種を植えたらhanehati.PNG
+      elImage.src = "tanehati.PNG";
       btnWater.style.display = "block";
       btnPlant.disabled = true;
       elLastWatered.innerText = formatTimestamp(pot.last_watered_at);
@@ -195,31 +227,21 @@
       elGrowth.innerText = "種を待っています";
     }
     drawEncyclopedia();
-    localStorage.setItem('plantAppSave_v3', JSON.stringify(saveData));
+    localStorage.setItem('plantAppSave_v4', JSON.stringify(saveData));
   }
 
-  // --- イベント：種を植える ---
   btnPlant.addEventListener('click', () => {
-    saveData.active_pot = {
-      is_occupied: true,
-      last_watered_at: null,
-      total_water_count: 0,
-      time_stats: { morning: 0, day: 0, night: 0 }
-    };
+    saveData.active_pot = { is_occupied: true, last_watered_at: null, total_water_count: 0, time_stats: { morning: 0, day: 0, night: 0 } };
     updateUI();
   });
 
-  // --- イベント：水やり ---
   btnWater.addEventListener('click', () => {
-    // 現在の画像のsrcを保存しておく（1秒後に戻すため）
     const originalSrc = elImage.src;
-    // ジョウロ画像を表示
-    elImage.src = "joro.PNG";
+    elImage.src = "joro.PNG"; // ジョウロ画像
 
     const now = new Date();
     const hr = now.getHours();
     
-    // 時間帯記録
     if (hr >= 5 && hr < 10) saveData.active_pot.time_stats.morning++;
     else if (hr >= 18 || hr < 5) saveData.active_pot.time_stats.night++;
     else saveData.active_pot.time_stats.day++;
@@ -227,16 +249,14 @@
     saveData.active_pot.last_watered_at = Date.now();
     saveData.active_pot.total_water_count++;
 
-    // 1秒（1000ミリ秒）後に元の画像に戻す
     setTimeout(() => {
       elImage.src = originalSrc;
-      // 元に戻した後、進化判定を行う
       if (saveData.active_pot.total_water_count >= WATER_GOAL) {
         evolve();
       } else {
         updateUI();
       }
-    }, 1000); // 1秒表示
+    }, 1000);
   });
 
   function evolve() {
@@ -249,6 +269,9 @@
     
     if (!saveData.encyclopedia.unlocked_plant_ids.includes(plant.id)) {
       saveData.encyclopedia.unlocked_plant_ids.push(plant.id);
+      newlyUnlockedId = plant.id; // 新規登録演出のためにIDを記録
+    } else {
+      newlyUnlockedId = null;
     }
 
     elImage.src = plant.image;
@@ -266,14 +289,50 @@
     for (let i = 1; i <= 10; i++) {
       const div = document.createElement('div');
       div.className = 'grid-item';
-      const id = saveData.encyclopedia.unlocked_plant_ids.find(idx => idx === i);
-      if (id) {
-        const p = plant_master.find(pm => pm.id === i);
-        div.innerHTML = `<img src="${p ? p.image : ''}">`;
+      
+      const isUnlocked = saveData.encyclopedia.unlocked_plant_ids.includes(i);
+      
+      if (isUnlocked) {
+        const p = plant_master.find(pm => pm.id === i) || { image: '', name: '不明', description: '' };
+        div.innerHTML = `<img src="${p.image}">`;
+        div.classList.add('unlocked');
+        
+        // NEW演出の適用
+        if (i === newlyUnlockedId) {
+          div.classList.add('is-new');
+        }
+
+        // タップイベント
+        div.onclick = () => openModal(p);
       } else {
         div.innerText = "?";
       }
       bookGrid.appendChild(div);
+    }
+  }
+
+  // --- モーダル制御 ---
+  function openModal(plant) {
+    document.getElementById('modal-img').src = plant.image;
+    document.getElementById('modal-title').innerText = plant.name;
+    document.getElementById('modal-desc').innerText = plant.description;
+    modal.style.display = "flex";
+
+    // タップして確認したらNEWマークを消す
+    if (plant.id === newlyUnlockedId) {
+      newlyUnlockedId = null;
+      drawEncyclopedia(); // 再描画して枠線を消す
+    }
+  }
+
+  function closeModal() {
+    modal.style.display = "none";
+  }
+
+  // モーダルの背景枠をタップしても閉じるようにする
+  window.onclick = function(event) {
+    if (event.target === modal) {
+      closeModal();
     }
   }
 
