@@ -1,265 +1,274 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>レトロRPG風 歩行ゲーム</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            background-color: #f0f0f0;
-            font-family: monospace;
-        }
-
-        #gameContainer {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        canvas {
-            background-color: #fff;
-            border: 2px solid #000;
-            image-rendering: pixelated; /* ドット絵をくっきり表示 */
-            max-width: 100%;
-            max-height: 70vh;
-        }
-
-        /* スマホ用方向パッド */
-        #controls {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            grid-template-rows: repeat(3, 1fr);
-            gap: 10px;
-            width: 200px;
-            height: 200px;
-            margin-top: 20px;
-        }
-
-        .control-btn {
-            background-color: #333;
-            color: #fff;
-            border: none;
-            border-radius: 50%;
-            font-size: 24px;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            user-select: none;
-            -webkit-user-select: none;
-            touch-action: manipulation;
-        }
-
-        .control-btn:active {
-            background-color: #666;
-        }
-
-        #btnUp { grid-column: 2; grid-row: 1; }
-        #btnLeft { grid-column: 1; grid-row: 2; }
-        #btnRight { grid-column: 3; grid-row: 2; }
-        #btnDown { grid-column: 2; grid-row: 3; }
-
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>植物図鑑アプリ</title>
+  <style>
+    /* モバイル向けのデザイン設定 */
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+    #app-container {
+      max-width: 400px;
+      margin: 0 auto;
+      background-color: white;
+      min-height: 100vh;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    /* 育成エリア */
+    #pot-area {
+      height: 250px;
+      background-color: #eef7ee;
+      border-radius: 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 20px;
+      position: relative;
+    }
+    #plant-image {
+      max-width: 80%;
+      max-height: 80%;
+    }
+    /* ボタン類 */
+    button {
+      padding: 15px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 5px;
+      font-weight: bold;
+    }
+    #btn-water { background-color: #4CAF50; color: white; width: 100%; margin-bottom: 15px; }
+    #btn-water:active { background-color: #45a049; }
+    #btn-plant { background-color: #ff9800; color: white; width: 100%; }
+    #btn-plant:disabled { background-color: #ccc; cursor: not-allowed; }
+    /* 図鑑エリア */
+    #encyclopedia {
+      margin-top: 30px;
+      border-top: 2px solid #eee;
+      padding-top: 20px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 5px;
+      margin-top: 10px;
+    }
+    .grid-item {
+      aspect-ratio: 1 / 1;
+      background-color: #ddd;
+      border-radius: 5px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 12px;
+      overflow: hidden;
+    }
+    .grid-item img { width: 100%; height: 100%; object-fit: cover; }
+    #message-box {
+      min-height: 40px;
+      color: #333;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
 
-<div id="gameContainer">
-    <canvas id="gameCanvas" width="320" height="320"></canvas>
+<div id="app-container">
+  <h1>植物図鑑</h1>
+  
+  <div id="message-box">種を植えてみましょう！</div>
 
-    <div id="controls">
-        <button id="btnUp" class="control-btn">↑</button>
-        <button id="btnLeft" class="control-btn">←</button>
-        <button id="btnRight" class="control-btn">→</button>
-        <button id="btnDown" class="control-btn">↓</button>
-    </div>
+  <div id="pot-area">
+    <img id="plant-image" src="seed.png" alt="植物" style="display: none;">
+  </div>
+
+  <button id="btn-water" style="display: none;">お水をあげる 💧</button>
+  <button id="btn-plant">新しい種を植える 🌱</button>
+
+  <div id="encyclopedia">
+    <h3>図鑑</h3>
+    <div class="grid" id="book-grid">
+      </div>
+  </div>
 </div>
 
 <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    const SPRITE_URL = 'image_0.png'; // 生成されたスプライトシートを使用
+  // --------------------------------------------------
+  // 1. JSONデータの準備（本来は別ファイルから読み込みますが、
+  //    ローカル環境でエラーを出さずに動かすためここに定義します）
+  // --------------------------------------------------
+  
+  const plant_master = [
+    { id: 1, name: "朝のアサガオ", image: "plant_01.png", condition: { preferred_time: "morning", interval_type: "short" } },
+    { id: 2, name: "サボテン", image: "plant_02.png", condition: { preferred_time: "any", interval_type: "long" } },
+    { id: 3, name: "ツキミソウ", image: "plant_03.png", condition: { preferred_time: "night", interval_type: "regular" } }
+    // ※今回はテスト用に3つだけ登録しています
+  ];
 
-    // ゲーム設定
-    const SPRITE_SIZE = 64; // スプライトシート内の1コマのサイズ（生成画像に合わせる）
-    const DISPLAY_SIZE = 64; // 画面上に描画するサイズ
-    const MAP_SIZE = 320;
-    const MOVE_SPEED = 2; // 1フレームの移動ピクセル
-    const ANIM_SPEED = 10; // アニメーションの切り替え頻度（フレーム数）
+  const initial_save_data = {
+    player: { currency: 500 },
+    active_pot: {
+      is_occupied: false, // 現在育成中かどうか
+      planted_at: null,
+      last_watered_at: null,
+      total_water_count: 0,
+      time_stats: { morning: 0, day: 0, night: 0 }
+    },
+    encyclopedia: { unlocked_plant_ids: [] }
+  };
 
-    // スプライトシートのコマ位置定義 (行: 方向, 列: アニメーションコマ)
-    // 0: 下, 1: 上, 2: 左, 3: 右
-    // 0: 立ち止まる, 1: 左足, 2: 右足
-    const SPRITE_MAP = {
-        down:  { row: 0, cols: [0, 1, 0, 2] },
-        up:    { row: 1, cols: [0, 1, 0, 2] },
-        left:  { row: 2, cols: [0, 1, 0, 2] },
-        right: { row: 3, cols: [0, 1, 0, 2] }
+  // --------------------------------------------------
+  // 2. セーブデータの読み込みと初期化
+  // --------------------------------------------------
+  let saveData = JSON.parse(localStorage.getItem('plantAppSave'));
+  if (!saveData) {
+    saveData = initial_save_data;
+  }
+
+  // HTML要素の取得
+  const elImage = document.getElementById('plant-image');
+  const btnWater = document.getElementById('btn-water');
+  const btnPlant = document.getElementById('btn-plant');
+  const msgBox = document.getElementById('message-box');
+  const bookGrid = document.getElementById('book-grid');
+
+  const EVOLUTION_WATER_COUNT = 3; // テスト用：3回水やりで進化
+
+  // --------------------------------------------------
+  // 3. ゲームのメイン機能
+  // --------------------------------------------------
+
+  // 画面の更新処理
+  function updateUI() {
+    if (saveData.active_pot.is_occupied) {
+      elImage.src = "seed.png";
+      elImage.style.display = "block";
+      btnWater.style.display = "block";
+      
+      // 育成中の植物がいる場合は、新しい種を植えられないように制御
+      btnPlant.disabled = true; 
+      btnPlant.innerText = "育成中です";
+      
+      msgBox.innerText = `水やり回数: ${saveData.active_pot.total_water_count} / ${EVOLUTION_WATER_COUNT}`;
+    } else {
+      elImage.style.display = "none";
+      btnWater.style.display = "none";
+      btnPlant.disabled = false;
+      btnPlant.innerText = "新しい種を植える 🌱";
+      msgBox.innerText = "鉢が空いています。種を植えましょう！";
+    }
+    drawEncyclopedia();
+    localStorage.setItem('plantAppSave', JSON.stringify(saveData)); // セーブ
+  }
+
+  // 種を植える処理
+  btnPlant.addEventListener('click', () => {
+    if (saveData.active_pot.is_occupied) return; // 念のためのチェック
+
+    saveData.active_pot = {
+      is_occupied: true,
+      planted_at: Date.now(),
+      last_watered_at: Date.now(),
+      total_water_count: 0,
+      time_stats: { morning: 0, day: 0, night: 0 }
     };
+    updateUI();
+  });
 
-    // プレイヤーオブジェクト
-    let player = {
-        x: (MAP_SIZE - DISPLAY_SIZE) / 2,
-        y: (MAP_SIZE - DISPLAY_SIZE) / 2,
-        direction: 'down',
-        isMoving: false,
-        animFrame: 0,
-        animTimer: 0
-    };
+  // 水をあげる処理
+  btnWater.addEventListener('click', () => {
+    const now = new Date();
+    const currentHour = now.getHours();
 
-    // 入力状態
-    let keys = {
-        up: false, down: false, left: false, right: false
-    };
+    // 時間帯の判定
+    if (currentHour >= 5 && currentHour < 10) saveData.active_pot.time_stats.morning++;
+    else if (currentHour >= 18 || currentHour < 5) saveData.active_pot.time_stats.night++;
+    else saveData.active_pot.time_stats.day++;
 
-    // スプライトシートの読み込み
-    const spriteSheet = new Image();
-    spriteSheet.src = SPRITE_URL;
-    spriteSheet.onload = () => {
-        // 画像がロードされたらゲームループを開始
-        gameLoop();
-    };
+    saveData.active_pot.last_watered_at = Date.now();
+    saveData.active_pot.total_water_count++;
 
-    // 入力イベント（PC）
-    window.addEventListener('keydown', (e) => {
-        switch(e.key) {
-            case 'ArrowUp': case 'w': keys.up = true; break;
-            case 'ArrowDown': case 's': keys.down = true; break;
-            case 'ArrowLeft': case 'a': keys.left = true; break;
-            case 'ArrowRight': case 'd': keys.right = true; break;
-        }
-    });
+    // 進化判定
+    if (saveData.active_pot.total_water_count >= EVOLUTION_WATER_COUNT) {
+      evolvePlant();
+    } else {
+      updateUI();
+    }
+  });
 
-    window.addEventListener('keyup', (e) => {
-        switch(e.key) {
-            case 'ArrowUp': case 'w': keys.up = false; break;
-            case 'ArrowDown': case 's': keys.down = false; break;
-            case 'ArrowLeft': case 'a': keys.left = false; break;
-            case 'ArrowRight': case 'd': keys.right = false; break;
-        }
-    });
+  // 進化処理
+  function evolvePlant() {
+    // どの時間帯に一番水をあげたか判定
+    const stats = saveData.active_pot.time_stats;
+    let maxTime = "day";
+    let maxVal = stats.day;
 
-    // 入力イベント（スマホ）
-    const setupMobileControls = () => {
-        const btns = [
-            { id: 'btnUp', key: 'up' },
-            { id: 'btnDown', key: 'down' },
-            { id: 'btnLeft', key: 'left' },
-            { id: 'btnRight', key: 'right' }
-        ];
+    if (stats.morning > maxVal) { maxVal = stats.morning; maxTime = "morning"; }
+    if (stats.night > maxVal) { maxVal = stats.night; maxTime = "night"; }
 
-        btns.forEach(btn => {
-            const element = document.getElementById(btn.id);
-            element.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                keys[btn.key] = true;
-            });
-            element.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                keys[btn.key] = false;
-            });
-        });
-    };
-    setupMobileControls();
+    // マスターデータから条件に合う植物を検索（今回は時間帯のみで簡易判定）
+    let evolvedPlant = plant_master.find(p => p.condition.preferred_time === maxTime);
+    
+    // 見つからなかった場合のデフォルト（サボテンなど）
+    if (!evolvedPlant) evolvedPlant = plant_master[1]; 
 
+    // 図鑑に登録
+    if (!saveData.encyclopedia.unlocked_plant_ids.includes(evolvedPlant.id)) {
+      saveData.encyclopedia.unlocked_plant_ids.push(evolvedPlant.id);
+    }
 
-    // プレイヤーの更新
-    function updatePlayer() {
-        player.isMoving = false;
-        let nextX = player.x;
-        let nextY = player.y;
+    // 画像を成長後のものに切り替え
+    elImage.src = evolvedPlant.image;
+    msgBox.innerText = `${evolvedPlant.name} に成長しました！`;
+    
+    // 鉢を空にする
+    saveData.active_pot.is_occupied = false;
+    
+    // 少し待ってからUIをリセット
+    setTimeout(() => {
+      alert(`${evolvedPlant.name} を図鑑に登録しました！`);
+      updateUI();
+    }, 500);
+  }
 
-        if (keys.up) {
-            nextY -= MOVE_SPEED;
-            player.direction = 'up';
-            player.isMoving = true;
-        } else if (keys.down) {
-            nextY += MOVE_SPEED;
-            player.direction = 'down';
-            player.isMoving = true;
-        }
-
-        if (keys.left) {
-            nextX -= MOVE_SPEED;
-            player.direction = 'left';
-            player.isMoving = true;
-        } else if (keys.right) {
-            nextX += MOVE_SPEED;
-            player.direction = 'right';
-            player.isMoving = true;
-        }
-
-        // 境界判定（画面外に出ないようにする）
-        if (nextX >= 0 && nextX <= MAP_SIZE - DISPLAY_SIZE) {
-            player.x = nextX;
-        }
-        if (nextY >= 0 && nextY <= MAP_SIZE - DISPLAY_SIZE) {
-            player.y = nextY;
-        }
-
-        // アニメーションの更新
-        if (player.isMoving) {
-            player.animTimer++;
-            if (player.animTimer >= ANIM_SPEED) {
-                player.animTimer = 0;
-                player.animFrame = (player.animFrame + 1) % SPRITE_MAP[player.direction].cols.length;
-            }
+  // 図鑑の描画
+  function drawEncyclopedia() {
+    bookGrid.innerHTML = "";
+    // 全10枠作成
+    for (let i = 1; i <= 10; i++) {
+      const div = document.createElement('div');
+      div.className = 'grid-item';
+      
+      if (saveData.encyclopedia.unlocked_plant_ids.includes(i)) {
+        // 解放済み
+        const plantInfo = plant_master.find(p => p.id === i);
+        if(plantInfo){
+            div.innerHTML = `<img src="${plantInfo.image}" alt="${plantInfo.name}">`;
         } else {
-            player.animFrame = 0; // 立ち止まる
-            player.animTimer = 0;
+            div.innerText = i; // マスター未定義の場合
         }
+      } else {
+        // 未解放
+        div.innerText = "?";
+      }
+      bookGrid.appendChild(div);
     }
+  }
 
-    // 描画
-    function draw() {
-        // キャンバスをクリア
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // プレイヤーを描画
-        if (spriteSheet.complete) {
-            const directionData = SPRITE_MAP[player.direction];
-            const col = directionData.cols[player.animFrame];
-            const row = directionData.row;
-
-            // `drawImage`でスプライトシートから特定のコマを切り抜いて描画
-            // sx, sy: スプライトシート内の開始座標
-            // sw, sh: 切り抜くサイズ
-            // dx, dy: 画面上の描画座標
-            // dw, dh: 画面上の描画サイズ
-            ctx.drawImage(
-                spriteSheet,
-                col * SPRITE_SIZE, row * SPRITE_SIZE, SPRITE_SIZE, SPRITE_SIZE, // ソース (sx, sy, sw, sh)
-                player.x, player.y, DISPLAY_SIZE, DISPLAY_SIZE // ディスティネーション (dx, dy, dw, dh)
-            );
-        }
-
-        // グリッド（簡易的な背景）
-        ctx.strokeStyle = '#eee';
-        for (let i = 0; i <= MAP_SIZE; i += DISPLAY_SIZE) {
-            ctx.beginPath();
-            ctx.moveTo(i, 0);
-            ctx.lineTo(i, MAP_SIZE);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(0, i);
-            ctx.lineTo(MAP_SIZE, i);
-            ctx.stroke();
-        }
-    }
-
-    // ゲームループ
-    function gameLoop() {
-        updatePlayer();
-        draw();
-        requestAnimationFrame(gameLoop);
-    }
+  // 初回起動時の処理
+  updateUI();
 
 </script>
-
 </body>
 </html>
