@@ -3,59 +3,92 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>植物図鑑アプリ</title>
+  <title>植物図鑑アプリ - 時間連動版</title>
   <style>
-    /* モバイル向けのデザイン設定 */
     body {
-      font-family: sans-serif;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
       text-align: center;
-      background-color: #f4f4f4;
+      background-color: #f0f2f0;
       margin: 0;
       padding: 0;
+      color: #333;
     }
     #app-container {
       max-width: 400px;
       margin: 0 auto;
       background-color: white;
       min-height: 100vh;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
       padding: 20px;
       box-sizing: border-box;
     }
+
+    /* 時間表示エリア */
+    .time-display {
+      background-color: #333;
+      color: #00ff00;
+      font-family: monospace;
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 15px;
+      font-size: 1.2rem;
+    }
+    .info-text {
+      font-size: 0.9rem;
+      color: #666;
+      margin-bottom: 5px;
+    }
+
     /* 育成エリア */
     #pot-area {
-      height: 250px;
-      background-color: #eef7ee;
-      border-radius: 10px;
+      height: 220px;
+      background: linear-gradient(to bottom, #eef7ee, #dceddc);
+      border-radius: 15px;
       display: flex;
       justify-content: center;
       align-items: center;
-      margin-bottom: 20px;
-      position: relative;
+      margin-bottom: 15px;
+      border: 2px dashed #ccc;
     }
     #plant-image {
-      max-width: 80%;
-      max-height: 80%;
+      max-width: 70%;
+      max-height: 70%;
     }
-    /* ボタン類 */
+
+    /* ステータス表示 */
+    .status-panel {
+      background-color: #f9f9f9;
+      padding: 10px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    .status-item {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid #eee;
+      padding: 5px 0;
+    }
+
     button {
-      padding: 15px 20px;
+      padding: 15px;
       font-size: 16px;
       border: none;
-      border-radius: 8px;
+      border-radius: 50px;
       cursor: pointer;
-      margin: 5px;
+      margin: 5px 0;
       font-weight: bold;
+      width: 100%;
+      transition: transform 0.1s;
     }
-    #btn-water { background-color: #4CAF50; color: white; width: 100%; margin-bottom: 15px; }
-    #btn-water:active { background-color: #45a049; }
-    #btn-plant { background-color: #ff9800; color: white; width: 100%; }
-    #btn-plant:disabled { background-color: #ccc; cursor: not-allowed; }
-    /* 図鑑エリア */
+    button:active { transform: scale(0.98); }
+    #btn-water { background-color: #2196F3; color: white; }
+    #btn-plant { background-color: #4CAF50; color: white; }
+    #btn-plant:disabled { background-color: #ccc; }
+
     #encyclopedia {
       margin-top: 30px;
       border-top: 2px solid #eee;
-      padding-top: 20px;
     }
     .grid {
       display: grid;
@@ -65,32 +98,35 @@
     }
     .grid-item {
       aspect-ratio: 1 / 1;
-      background-color: #ddd;
+      background-color: #eee;
       border-radius: 5px;
       display: flex;
       justify-content: center;
       align-items: center;
-      font-size: 12px;
-      overflow: hidden;
+      font-size: 10px;
     }
-    .grid-item img { width: 100%; height: 100%; object-fit: cover; }
-    #message-box {
-      min-height: 40px;
-      color: #333;
-      margin-bottom: 10px;
-      font-weight: bold;
-    }
+    .grid-item img { width: 90%; }
   </style>
 </head>
 <body>
 
 <div id="app-container">
-  <h1>植物図鑑</h1>
-  
-  <div id="message-box">種を植えてみましょう！</div>
+  <div class="info-text">現在の現実時間</div>
+  <div id="current-time" class="time-display">00:00:00</div>
 
   <div id="pot-area">
     <img id="plant-image" src="seed.png" alt="植物" style="display: none;">
+  </div>
+
+  <div class="status-panel">
+    <div class="status-item">
+      <span>前回の水やり:</span>
+      <span id="last-watered-time">なし</span>
+    </div>
+    <div class="status-item">
+      <span>成長具合:</span>
+      <span id="growth-status">-</span>
+    </div>
   </div>
 
   <button id="btn-water" style="display: none;">お水をあげる 💧</button>
@@ -98,177 +134,138 @@
 
   <div id="encyclopedia">
     <h3>図鑑</h3>
-    <div class="grid" id="book-grid">
-      </div>
+    <div class="grid" id="book-grid"></div>
   </div>
 </div>
 
 <script>
-  // --------------------------------------------------
-  // 1. JSONデータの準備（本来は別ファイルから読み込みますが、
-  //    ローカル環境でエラーを出さずに動かすためここに定義します）
-  // --------------------------------------------------
-  
+  // --- データ定義 ---
   const plant_master = [
-    { id: 1, name: "朝のアサガオ", image: "plant_01.png", condition: { preferred_time: "morning", interval_type: "short" } },
-    { id: 2, name: "サボテン", image: "plant_02.png", condition: { preferred_time: "any", interval_type: "long" } },
-    { id: 3, name: "ツキミソウ", image: "plant_03.png", condition: { preferred_time: "night", interval_type: "regular" } }
-    // ※今回はテスト用に3つだけ登録しています
+    { id: 1, name: "朝のアサガオ", image: "plant_01.png", condition: { preferred_time: "morning" } },
+    { id: 2, name: "サボテン", image: "plant_02.png", condition: { preferred_time: "day" } },
+    { id: 3, name: "ツキミソウ", image: "plant_03.png", condition: { preferred_time: "night" } }
   ];
 
-  const initial_save_data = {
-    player: { currency: 500 },
-    active_pot: {
-      is_occupied: false, // 現在育成中かどうか
-      planted_at: null,
-      last_watered_at: null,
-      total_water_count: 0,
-      time_stats: { morning: 0, day: 0, night: 0 }
-    },
+  let saveData = JSON.parse(localStorage.getItem('plantAppSave_v2')) || {
+    active_pot: { is_occupied: false, last_watered_at: null, total_water_count: 0, time_stats: { morning: 0, day: 0, night: 0 } },
     encyclopedia: { unlocked_plant_ids: [] }
   };
 
-  // --------------------------------------------------
-  // 2. セーブデータの読み込みと初期化
-  // --------------------------------------------------
-  let saveData = JSON.parse(localStorage.getItem('plantAppSave'));
-  if (!saveData) {
-    saveData = initial_save_data;
-  }
-
-  // HTML要素の取得
+  // --- 要素取得 ---
+  const elCurrentTime = document.getElementById('current-time');
+  const elLastWatered = document.getElementById('last-watered-time');
+  const elGrowth = document.getElementById('growth-status');
   const elImage = document.getElementById('plant-image');
   const btnWater = document.getElementById('btn-water');
   const btnPlant = document.getElementById('btn-plant');
-  const msgBox = document.getElementById('message-box');
   const bookGrid = document.getElementById('book-grid');
 
-  const EVOLUTION_WATER_COUNT = 3; // テスト用：3回水やりで進化
+  // --- 機能：時計の更新 ---
+  function updateClock() {
+    const now = new Date();
+    elCurrentTime.innerText = now.toLocaleTimeString('ja-JP', { hour12: false });
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
 
-  // --------------------------------------------------
-  // 3. ゲームのメイン機能
-  // --------------------------------------------------
+  // --- 機能：日付のフォーマット ---
+  function formatTimestamp(ts) {
+    if (!ts) return "なし";
+    const d = new Date(ts);
+    return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  }
 
-  // 画面の更新処理
+  // --- 機能：UI更新 ---
   function updateUI() {
-    if (saveData.active_pot.is_occupied) {
-      elImage.src = "seed.png";
+    const pot = saveData.active_pot;
+    if (pot.is_occupied) {
       elImage.style.display = "block";
+      elImage.src = "seed.png";
       btnWater.style.display = "block";
-      
-      // 育成中の植物がいる場合は、新しい種を植えられないように制御
-      btnPlant.disabled = true; 
-      btnPlant.innerText = "育成中です";
-      
-      msgBox.innerText = `水やり回数: ${saveData.active_pot.total_water_count} / ${EVOLUTION_WATER_COUNT}`;
+      btnPlant.disabled = true;
+      elLastWatered.innerText = formatTimestamp(pot.last_watered_at);
+      elGrowth.innerText = `水やり ${pot.total_water_count} / 3回`;
     } else {
       elImage.style.display = "none";
       btnWater.style.display = "none";
       btnPlant.disabled = false;
-      btnPlant.innerText = "新しい種を植える 🌱";
-      msgBox.innerText = "鉢が空いています。種を植えましょう！";
+      elLastWatered.innerText = "なし";
+      elGrowth.innerText = "種を待っています";
     }
     drawEncyclopedia();
-    localStorage.setItem('plantAppSave', JSON.stringify(saveData)); // セーブ
+    localStorage.setItem('plantAppSave_v2', JSON.stringify(saveData));
   }
 
-  // 種を植える処理
+  // --- イベント：種を植える ---
   btnPlant.addEventListener('click', () => {
-    if (saveData.active_pot.is_occupied) return; // 念のためのチェック
-
     saveData.active_pot = {
       is_occupied: true,
-      planted_at: Date.now(),
-      last_watered_at: Date.now(),
+      last_watered_at: null,
       total_water_count: 0,
       time_stats: { morning: 0, day: 0, night: 0 }
     };
     updateUI();
   });
 
-  // 水をあげる処理
+  // --- イベント：水やり ---
   btnWater.addEventListener('click', () => {
     const now = new Date();
-    const currentHour = now.getHours();
-
-    // 時間帯の判定
-    if (currentHour >= 5 && currentHour < 10) saveData.active_pot.time_stats.morning++;
-    else if (currentHour >= 18 || currentHour < 5) saveData.active_pot.time_stats.night++;
+    const hr = now.getHours();
+    
+    // 時間帯記録
+    if (hr >= 5 && hr < 10) saveData.active_pot.time_stats.morning++;
+    else if (hr >= 18 || hr < 5) saveData.active_pot.time_stats.night++;
     else saveData.active_pot.time_stats.day++;
 
     saveData.active_pot.last_watered_at = Date.now();
     saveData.active_pot.total_water_count++;
 
-    // 進化判定
-    if (saveData.active_pot.total_water_count >= EVOLUTION_WATER_COUNT) {
-      evolvePlant();
+    if (saveData.active_pot.total_water_count >= 3) {
+      evolve();
     } else {
       updateUI();
     }
   });
 
-  // 進化処理
-  function evolvePlant() {
-    // どの時間帯に一番水をあげたか判定
+  function evolve() {
     const stats = saveData.active_pot.time_stats;
-    let maxTime = "day";
-    let maxVal = stats.day;
+    let type = "day";
+    if (stats.morning > stats.day && stats.morning > stats.night) type = "morning";
+    if (stats.night > stats.day && stats.night > stats.morning) type = "night";
 
-    if (stats.morning > maxVal) { maxVal = stats.morning; maxTime = "morning"; }
-    if (stats.night > maxVal) { maxVal = stats.night; maxTime = "night"; }
-
-    // マスターデータから条件に合う植物を検索（今回は時間帯のみで簡易判定）
-    let evolvedPlant = plant_master.find(p => p.condition.preferred_time === maxTime);
+    const plant = plant_master.find(p => p.condition.preferred_time === type) || plant_master[0];
     
-    // 見つからなかった場合のデフォルト（サボテンなど）
-    if (!evolvedPlant) evolvedPlant = plant_master[1]; 
-
-    // 図鑑に登録
-    if (!saveData.encyclopedia.unlocked_plant_ids.includes(evolvedPlant.id)) {
-      saveData.encyclopedia.unlocked_plant_ids.push(evolvedPlant.id);
+    if (!saveData.encyclopedia.unlocked_plant_ids.includes(plant.id)) {
+      saveData.encyclopedia.unlocked_plant_ids.push(plant.id);
     }
 
-    // 画像を成長後のものに切り替え
-    elImage.src = evolvedPlant.image;
-    msgBox.innerText = `${evolvedPlant.name} に成長しました！`;
-    
-    // 鉢を空にする
+    elImage.src = plant.image;
+    elGrowth.innerText = `${plant.name} になりました！`;
     saveData.active_pot.is_occupied = false;
     
-    // 少し待ってからUIをリセット
     setTimeout(() => {
-      alert(`${evolvedPlant.name} を図鑑に登録しました！`);
+      alert(plant.name + " を図鑑に登録！");
       updateUI();
     }, 500);
   }
 
-  // 図鑑の描画
   function drawEncyclopedia() {
     bookGrid.innerHTML = "";
-    // 全10枠作成
     for (let i = 1; i <= 10; i++) {
       const div = document.createElement('div');
       div.className = 'grid-item';
-      
-      if (saveData.encyclopedia.unlocked_plant_ids.includes(i)) {
-        // 解放済み
-        const plantInfo = plant_master.find(p => p.id === i);
-        if(plantInfo){
-            div.innerHTML = `<img src="${plantInfo.image}" alt="${plantInfo.name}">`;
-        } else {
-            div.innerText = i; // マスター未定義の場合
-        }
+      const id = saveData.encyclopedia.unlocked_plant_ids.find(idx => idx === i);
+      if (id) {
+        const p = plant_master.find(pm => pm.id === i);
+        div.innerHTML = `<img src="${p ? p.image : ''}">`;
       } else {
-        // 未解放
         div.innerText = "?";
       }
       bookGrid.appendChild(div);
     }
   }
 
-  // 初回起動時の処理
   updateUI();
-
 </script>
 </body>
 </html>
