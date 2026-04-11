@@ -1,0 +1,102 @@
+[
+  {
+    "id": 1,
+    "name": "朝のアサガオ",
+    "description": "朝にたくさん水をもらって元気に育った花。早起きのご褒美。",
+    "image": "plant_01.png",
+    "condition": {
+      "preferred_time": "morning",
+      "interval_type": "short"
+    }
+  },
+  {
+    "id": 2,
+    "name": "サボテン",
+    "description": "水やりの間隔が長くても、たくましく育った乾燥に強い植物。",
+    "image": "plant_02.png",
+    "condition": {
+      "preferred_time": "any",
+      "interval_type": "long"
+    }
+  },
+  {
+    "id": 3,
+    "name": "ツキミソウ",
+    "description": "夜遅い時間にひっそりと水を飲んで育った花。月明かりが似合う。",
+    "image": "plant_03.png",
+    "condition": {
+      "preferred_time": "night",
+      "interval_type": "regular"
+    }
+  },
+  {
+    "id": 4,
+    "name": "ヒマワリ",
+    "description": "日中にこまめに水をもらい、太陽に向かって真っすぐ育った花。",
+    "image": "plant_04.png",
+    "condition": {
+      "preferred_time": "day",
+      "interval_type": "short"
+    }
+  },
+  {
+    "id": 5,
+    "name": "多肉植物",
+    "description": "日差しを浴びつつ、たまの水やりでのんびり育ったプニプニの葉。",
+    "image": "plant_05.png",
+    "condition": {
+      "preferred_time": "day",
+      "interval_type": "long"
+    }
+  },
+  {
+    "id": 6,
+    "name": "ヨルガオ",
+    "description": "夜に何度も様子を見てもらい、暗闇で美しく花開いた。",
+    "image": "plant_06.png",
+    "condition": {
+      "preferred_time": "night",
+      "interval_type": "short"
+    }
+  },
+  {
+    "id": 7,
+    "name": "ハーブ",
+    "description": "時間帯問わず、こまめに水をもらって香りが豊かに育った。",
+    "image": "plant_07.png",
+    "condition": {
+      "preferred_time": "any",
+      "interval_type": "short"
+    }
+  },
+  {
+    "id": 8,
+    "name": "苔玉",
+    "description": "不定期な水やりでも、じっくりと時間をかけて丸く成長した。",
+    "image": "plant_08.png",
+    "condition": {
+      "preferred_time": "irregular",
+      "interval_type": "long"
+    }
+  },
+  {
+    "id": 9,
+    "name": "観葉植物",
+    "description": "毎朝のルーティンでたまに水をもらい、お部屋の空気をきれいにする。",
+    "image": "plant_09.png",
+    "condition": {
+      "preferred_time": "morning",
+      "interval_type": "long"
+    }
+  },
+  {
+    "id": 10,
+    "name": "光るキノコ",
+    "description": "特定の条件が重なったときだけひっそりと生える、不思議でレアなキノコ。",
+    "image": "plant_10.png",
+    "condition": {
+      "preferred_time": "midnight",
+      "interval_type": "special"
+    }
+  }
+]

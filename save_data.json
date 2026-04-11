@@ -1,0 +1,22 @@
+{
+  "player": {
+    "currency": 500
+  },
+  "active_pot": {
+    "is_occupied": true,
+    "planted_at": 1712840000000,
+    "last_watered_at": 1712845000000,
+    "total_water_count": 5,
+    "time_stats": {
+      "morning": 2,
+      "day": 1,
+      "night": 2,
+      "midnight": 0,
+      "irregular": 0
+    },
+    "average_interval_ms": 3600000
+  },
+  "encyclopedia": {
+    "unlocked_plant_ids": [1, 3]
+  }
+}
