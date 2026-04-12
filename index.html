@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>植物図鑑アプリ - 全10種・間隔判定対応版</title>
+  <title>植物図鑑アプリ - 全10種・エラー対策版</title>
   <style>
     body {
       font-family: 'Helvetica Neue', Arial, sans-serif;
@@ -173,7 +173,7 @@
 </div>
 
 <script>
-  [span_3](start_span)// --- データ定義 (全10種類) ---[span_3](end_span)
+  // --- データ定義 (全10種類) ---
   const plant_master = [
     { id: 1, name: "朝のアサガオ", image: "plant_01.png", description: "朝にたくさん水をもらって元気に育った花。早起きのご褒美。" },
     { id: 2, name: "サボテン", image: "plant_02.png", description: "水やりの間隔が長くても、たくましく育った乾燥に強い植物。" },
@@ -185,11 +185,12 @@
     { id: 8, name: "苔玉", image: "plant_08.png", description: "不定期な水やりでも、じっくりと時間をかけて丸く成長した。" },
     { id: 9, name: "観葉植物", image: "plant_09.png", description: "毎朝のルーティンでたまに水をもらい、お部屋の空気をきれいにする。" },
     { id: 10, name: "光るキノコ", image: "plant_10.png", description: "深夜に特定の条件が重なったときだけ生える、不思議でレアなキノコ。" }
-  [span_4](start_span)];[span_4](end_span)
+  ];
 
-  // セーブデータ
-  [span_5](start_span)let saveData = JSON.parse(localStorage.getItem('plantAppSave_v6')) ||[span_5](end_span)
-  {
+  // --- セーブデータの安全な初期化 ---
+  const SAVE_KEY = 'plantAppSave_v7'; // v7に変更してエラー原因の古いデータをリセット
+
+  const defaultSaveData = {
     active_pot: { 
       is_occupied: false, 
       last_watered_at: null, 
@@ -198,9 +199,21 @@
       time_stats: { morning: 0, day: 0, night: 0, midnight: 0 } 
     },
     encyclopedia: { unlocked_plant_ids: [] }
-  [span_6](start_span)};[span_6](end_span)
+  };
 
-  [span_7](start_span)let newlyUnlockedId = null;[span_7](end_span)
+  let saveData = defaultSaveData;
+
+  try {
+    const loadedData = JSON.parse(localStorage.getItem(SAVE_KEY));
+    // ロードしたデータが正しい構造かチェック（図鑑の配列が存在するか等）
+    if (loadedData && loadedData.active_pot && loadedData.encyclopedia && Array.isArray(loadedData.encyclopedia.unlocked_plant_ids)) {
+      saveData = loadedData;
+    }
+  } catch (e) {
+    console.error("セーブデータの読み込みに失敗したため、初期化しました", e);
+  }
+
+  let newlyUnlockedId = null;
 
   const elCurrentTime = document.getElementById('current-time');
   const elLastWatered = document.getElementById('last-watered-time');
@@ -210,15 +223,15 @@
   const btnWater = document.getElementById('btn-water');
   const btnPlant = document.getElementById('btn-plant');
   const bookGrid = document.getElementById('book-grid');
-  [span_8](start_span)const modal = document.getElementById('plant-modal');[span_8](end_span)
+  const modal = document.getElementById('plant-modal');
 
-  [span_9](start_span)// 進化に必要な水やり回数を5回に修正[span_9](end_span)
+  // 進化に必要な水やり回数
   const WATER_GOAL = 5; 
 
   function updateClock() {
     const now = new Date();
     elCurrentTime.innerText = now.toLocaleTimeString('ja-JP', { hour12: false });
-  [span_10](start_span)}
+  }
   setInterval(updateClock, 1000);
   updateClock();
 
@@ -226,44 +239,49 @@
     if (!ts) return "なし";
     const d = new Date(ts);
     return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-  }[span_10](end_span)
+  }
 
   function getAverageIntervalMinutes() {
     const pot = saveData.active_pot;
-    [span_11](start_span)if (pot.total_water_count === 0) return 0;[span_11](end_span)
-    [span_12](start_span)// 改善点：種を植えた時からの平均を出すためtotal_water_countで割る[span_12](end_span)
-    return Math.floor((pot.total_interval_ms / pot.total_water_count) / 1000 / 60);
-  [span_13](start_span)}
+    if (!pot || pot.total_water_count === 0) return 0;
+    return Math.floor((pot.total_interval_ms / pot.total_water_count) / 1000 / 60) || 0;
+  }
 
   function updateUI() {
     const pot = saveData.active_pot;
     elImage.style.display = "block";
-    if (pot.is_occupied) {[span_13](end_span)
+    
+    if (pot.is_occupied) {
       elImage.src = "tanehati.PNG";
       btnWater.style.display = "block";
       btnPlant.disabled = true;
       elLastWatered.innerText = formatTimestamp(pot.last_watered_at);
-      [span_14](start_span)elGrowth.innerText = `水やり ${pot.total_water_count} / ${WATER_GOAL}回`;[span_14](end_span)
+      elGrowth.innerText = `水やり ${pot.total_water_count} / ${WATER_GOAL}回`;
       
       const avgMins = getAverageIntervalMinutes();
-      elAvgInterval.innerText = pot.total_water_count > 0 ?
-      [span_15](start_span)`約 ${avgMins} 分` : "計算中...";[span_15](end_span)
+      elAvgInterval.innerText = pot.total_water_count > 0 ? `約 ${avgMins} 分` : "計算中...";
     } else {
       elImage.src = "tuti.jpg";
       btnWater.style.display = "none";
-      [span_16](start_span)btnPlant.disabled = false;[span_16](end_span)
+      btnPlant.disabled = false;
       elLastWatered.innerText = "なし";
       elAvgInterval.innerText = "-";
       elGrowth.innerText = "種を待っています";
     }
-    drawEncyclopedia();
-    localStorage.setItem('plantAppSave_v6', JSON.stringify(saveData));
-  [span_17](start_span)}
+    
+    // 図鑑の描画エラーを防ぐ
+    try {
+      drawEncyclopedia();
+    } catch (e) {
+      console.error("図鑑の描画に失敗しました", e);
+    }
+    
+    localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
+  }
 
   btnPlant.addEventListener('click', () => {
     saveData.active_pot = { 
       is_occupied: true, 
-      // 改善点：植えた瞬間に計測を開始する
       last_watered_at: Date.now(), 
       total_water_count: 0, 
       total_interval_ms: 0,
@@ -272,7 +290,7 @@
     updateUI();
   });
 
-  btnWater.addEventListener('click', () => {[span_17](end_span)
+  btnWater.addEventListener('click', () => {
     elImage.src = "joro.PNG"; 
     const now = new Date();
     const hr = now.getHours();
@@ -282,7 +300,7 @@
     else if (hr >= 18 && hr <= 23) saveData.active_pot.time_stats.night++;
     else saveData.active_pot.time_stats.midnight++;
 
-    [span_18](start_span)if (saveData.active_pot.last_watered_at) {[span_18](end_span)
+    if (saveData.active_pot.last_watered_at) {
       const diff = now.getTime() - saveData.active_pot.last_watered_at;
       saveData.active_pot.total_interval_ms += diff;
     }
@@ -297,105 +315,116 @@
         updateUI(); 
       }
     }, 1000);
-  [span_19](start_span)});[span_19](end_span)
+  });
 
   function evolve() {
     const stats = saveData.active_pot.time_stats;
     const avgMins = getAverageIntervalMinutes();
     const totalWaters = saveData.active_pot.total_water_count;
 
-    [span_20](start_span)let maxTime = "none";[span_20](end_span)
+    let maxTime = "none";
     let maxCount = 0;
-    [span_21](start_span)["morning", "day", "night", "midnight"].forEach(t => {[span_21](end_span)
+    ["morning", "day", "night", "midnight"].forEach(t => {
       if (stats[t] > maxCount) { maxTime = t; maxCount = stats[t]; }
     });
 
-    [span_22](start_span)let timePreference = "any";[span_22](end_span)
+    let timePreference = "any";
     if (maxCount >= totalWaters / 2) { 
       timePreference = maxTime;
-    [span_23](start_span)}
+    }
 
-    let intervalType = "short";[span_23](end_span)
+    let intervalType = "short";
     if (avgMins >= 1440) {
-      [span_24](start_span)intervalType = "very_long";[span_24](end_span)
+      intervalType = "very_long";
     } else if (avgMins >= 180) {
-      [span_25](start_span)intervalType = "long";[span_25](end_span)
+      intervalType = "long";
     }
 
-    [span_26](start_span)let resultId = null;[span_26](end_span)
+    let resultId = null;
     if (timePreference === "midnight") {
-      [span_27](start_span)resultId = 10;[span_27](end_span)
+      resultId = 10;
     } else if (timePreference === "any") {
-      [span_28](start_span)if (intervalType === "short") resultId = 7;[span_28](end_span)
-      [span_29](start_span)else if (intervalType === "long") resultId = 2;[span_29](end_span)
-      [span_30](start_span)else if (intervalType === "very_long") resultId = 8;[span_30](end_span)
+      if (intervalType === "short") resultId = 7;
+      else if (intervalType === "long") resultId = 2;
+      else if (intervalType === "very_long") resultId = 8;
     } else if (timePreference === "morning") {
-      resultId = (intervalType === "short") ? [span_31](start_span)1 : 9;[span_31](end_span)
+      resultId = (intervalType === "short") ? 1 : 9;
     } else if (timePreference === "day") {
-      resultId = (intervalType === "short") ? [span_32](start_span)4 : 5;[span_32](end_span)
+      resultId = (intervalType === "short") ? 4 : 5;
     } else if (timePreference === "night") {
-      resultId = (intervalType === "short") ? [span_33](start_span)6 : 3;[span_33](end_span)
+      resultId = (intervalType === "short") ? 6 : 3;
     }
 
-    [span_34](start_span)const plant = plant_master.find(p => p.id === resultId) || plant_master[0];[span_34](end_span)
+    const plant = plant_master.find(p => p.id === resultId) || plant_master[0];
     
+    // 図鑑配列が存在しない場合のエラー防止
+    if (!saveData.encyclopedia.unlocked_plant_ids) {
+        saveData.encyclopedia.unlocked_plant_ids = [];
+    }
+
     if (!saveData.encyclopedia.unlocked_plant_ids.includes(plant.id)) {
       saveData.encyclopedia.unlocked_plant_ids.push(plant.id);
       newlyUnlockedId = plant.id;
-    [span_35](start_span)} else {[span_35](end_span)
+    } else {
       newlyUnlockedId = null;
     }
 
     elImage.src = plant.image;
-    [span_36](start_span)elGrowth.innerText = `${plant.name} になりました！`;[span_36](end_span)
+    elGrowth.innerText = `${plant.name} になりました！`;
     saveData.active_pot.is_occupied = false;
     
     setTimeout(() => {
       alert(plant.name + " を図鑑に登録！");
       updateUI(); 
     }, 500);
-  [span_37](start_span)}
+  }
 
-  function drawEncyclopedia() {[span_37](end_span)
+  function drawEncyclopedia() {
     bookGrid.innerHTML = "";
+    
+    // データ欠損時のフェイルセーフ
+    const unlockedIds = saveData.encyclopedia?.unlocked_plant_ids || [];
+
     for (let i = 1; i <= 10; i++) {
       const div = document.createElement('div');
-      [span_38](start_span)div.className = 'grid-item';[span_38](end_span)
-      const isUnlocked = saveData.encyclopedia.unlocked_plant_ids.includes(i);
+      div.className = 'grid-item';
+      
+      const isUnlocked = unlockedIds.includes(i);
+      
       if (isUnlocked) {
-        const p = plant_master.find(pm => pm.id === i) || [span_39](start_span){ image: '', name: '不明', description: '' };[span_39](end_span)
+        const p = plant_master.find(pm => pm.id === i) || { image: '', name: '不明', description: '' };
         div.innerHTML = `<img src="${p.image}">`;
         div.classList.add('unlocked');
-        [span_40](start_span)if (i === newlyUnlockedId) {[span_40](end_span)
+        if (i === newlyUnlockedId) {
           div.classList.add('is-new');
-        [span_41](start_span)}
+        }
         div.onclick = () => openModal(p);
-      } else {[span_41](end_span)
+      } else {
         div.innerText = "?";
       }
       bookGrid.appendChild(div);
-    [span_42](start_span)}
+    }
   }
 
   function openModal(plant) {
     document.getElementById('modal-img').src = plant.image;
-    document.getElementById('modal-title').innerText = plant.name;[span_42](end_span)
+    document.getElementById('modal-title').innerText = plant.name;
     document.getElementById('modal-desc').innerText = plant.description;
     modal.style.display = "flex";
     if (plant.id === newlyUnlockedId) {
       newlyUnlockedId = null;
-      [span_43](start_span)drawEncyclopedia();[span_43](end_span)
+      drawEncyclopedia();
     }
   }
 
   function closeModal() {
     modal.style.display = "none";
-  [span_44](start_span)}
+  }
 
   window.onclick = function(event) {
     if (event.target === modal) {
       closeModal();
-    }[span_44](end_span)
+    }
   }
 
   updateUI();
