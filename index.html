@@ -65,9 +65,9 @@
       align-items: center;
       font-size: 10px;
       position: relative;
+      cursor: pointer; /* 未入手もタップできることを示す */
     }
     .grid-item img { width: 100%; height: 100%; object-fit: cover; border-radius: 5px; }
-    .grid-item.unlocked { cursor: pointer; }
 
     /* 図鑑の「NEW」演出 */
     @keyframes newPop {
@@ -121,8 +121,22 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     .close-btn { position: absolute; top: 10px; right: 15px; font-size: 24px; color: #999; cursor: pointer; }
     #modal-img { width: 150px; height: 150px; object-fit: contain; margin-bottom: 10px; }
+    
+    /* 未入手用の「？」プレースホルダー */
+    #modal-img-placeholder {
+      width: 150px;
+      height: 150px;
+      line-height: 150px;
+      font-size: 60px;
+      background-color: #eee;
+      color: #999;
+      border-radius: 10px;
+      margin: 0 auto 10px;
+      display: none;
+    }
+
     #modal-title { font-size: 1.2rem; margin: 0 0 10px 0; color: #333; }
-    #modal-desc { font-size: 0.9rem; color: #666; text-align: left; line-height: 1.5; margin: 0; }
+    #modal-desc { font-size: 0.9rem; color: #666; text-align: left; line-height: 1.5; margin: 0; white-space: pre-wrap; }
 
   </style>
 </head>
@@ -152,27 +166,28 @@
   <div class="modal-content">
     <span class="close-btn" onclick="closeModal()">&times;</span>
     <img id="modal-img" src="" alt="">
+    <div id="modal-img-placeholder">?</div>
     <h2 id="modal-title"></h2>
     <p id="modal-desc"></p>
   </div>
 </div>
 
 <script>
-  // --- データ定義 (全10種類) ---
+  // --- データ定義 (全10種類 + ヒント追加) ---
   const plant_master = [
-    { id: 1, name: "朝のアサガオ", image: "plant_01.png", description: "朝にたくさん水をもらって元気に育った花。早起きのご褒美。" },
-    { id: 2, name: "サボテン", image: "plant_02.png", description: "水やりの間隔が長くても、たくましく育った乾燥に強い植物。" },
-    { id: 3, name: "ツキミソウ", image: "plant_03.png", description: "夜遅い時間にひっそりと水を飲んで育った花。月明かりが似合う。" },
-    { id: 4, name: "ヒマワリ", image: "plant_04.png", description: "日中にこまめに水をもらい、太陽に向かって真っすぐ育った花。" },
-    { id: 5, name: "多肉植物", image: "plant_05.png", description: "日差しを浴びつつ、たまの水やりでのんびり育ったプニプニの葉。" },
-    { id: 6, name: "ヨルガオ", image: "plant_06.png", description: "夜に何度も様子を見てもらい、暗闇で美しく花開いた。" },
-    { id: 7, name: "ハーブ", image: "plant_07.png", description: "時間帯問わず、こまめに水をもらって香りが豊かに育った。" },
-    { id: 8, name: "苔玉", image: "plant_08.png", description: "不定期な水やりでも、じっくりと時間をかけて丸く成長した。" },
-    { id: 9, name: "観葉植物", image: "plant_09.png", description: "毎朝のルーティンでたまに水をもらい、お部屋の空気をきれいにする。" },
-    { id: 10, name: "光るキノコ", image: "plant_10.png", description: "深夜に特定の条件が重なったときだけ生える、不思議でレアなキノコ。" }
+    { id: 1, name: "朝のアサガオ", image: "plant_01.png", description: "朝にたくさん水をもらって元気に育った花。早起きのご褒美。", hint: "「朝」を中心に、「こまめに」お世話をしてみよう。" },
+    { id: 2, name: "サボテン", image: "plant_02.png", description: "水やりの間隔が長くても、たくましく育った乾燥に強い植物。", hint: "時間帯はバラバラでも大丈夫。「放置気味」で育ててみよう。" },
+    { id: 3, name: "ツキミソウ", image: "plant_03.png", description: "夜遅い時間にひっそりと水を飲んで育った花。月明かりが似合う。", hint: "「夜」を中心に、「放置気味」に育ててみよう。" },
+    { id: 4, name: "ヒマワリ", image: "plant_04.png", description: "日中にこまめに水をもらい、太陽に向かって真っすぐ育った花。", hint: "「昼」を中心に、「こまめに」お世話をしてみよう。" },
+    { id: 5, name: "多肉植物", image: "plant_05.png", description: "日差しを浴びつつ、たまの水やりでのんびり育ったプニプニの葉。", hint: "「昼」を中心に、「放置気味」に育ててみよう。" },
+    { id: 6, name: "ヨルガオ", image: "plant_06.png", description: "夜に何度も様子を見てもらい、暗闇で美しく花開いた。", hint: "「夜」を中心に、「こまめに」お世話をしてみよう。" },
+    { id: 7, name: "ハーブ", image: "plant_07.png", description: "時間帯問わず、こまめに水をもらって香りが豊かに育った。", hint: "時間帯は気にせず、「こまめに」お世話をしてみよう。" },
+    { id: 8, name: "苔玉", image: "plant_08.png", description: "不定期な水やりでも、じっくりと時間をかけて丸く成長した。", hint: "時間帯は気にせず、「かなり放置」してじっくり育ててみよう。" },
+    { id: 9, name: "観葉植物", image: "plant_09.png", description: "毎朝のルーティンでたまに水をもらい、お部屋の空気をきれいにする。", hint: "「朝」を中心に、「放置気味」に育ててみよう。" },
+    { id: 10, name: "光るキノコ", image: "plant_10.png", description: "深夜に特定の条件が重なったときだけ生える、不思議でレアなキノコ。", hint: "みんなが寝静まった「深夜」にお世話をしてみると…？" }
   ];
 
-  // --- セーブデータの安全な初期化 ---
+  // --- セーブデータの初期化 ---
   const SAVE_KEY = 'plantAppSave_v7'; 
 
   const defaultSaveData = {
@@ -245,12 +260,7 @@
       elGrowth.innerText = "種を待っています";
     }
     
-    try {
-      drawEncyclopedia();
-    } catch (e) {
-      console.error("図鑑の描画に失敗しました", e);
-    }
-    
+    drawEncyclopedia();
     localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
   }
 
@@ -270,7 +280,6 @@
     const now = new Date();
     const hr = now.getHours();
     
-    // 裏側の時間計算（現実時間との連動）は引き続き行われます
     if (hr >= 5 && hr < 10) saveData.active_pot.time_stats.morning++;
     else if (hr >= 10 && hr < 18) saveData.active_pot.time_stats.day++;
     else if (hr >= 18 && hr <= 23) saveData.active_pot.time_stats.night++;
@@ -364,28 +373,50 @@
       div.className = 'grid-item';
       
       const isUnlocked = unlockedIds.includes(i);
+      const p = plant_master.find(pm => pm.id === i) || { image: '', name: '不明', description: '', hint: '' };
       
       if (isUnlocked) {
-        const p = plant_master.find(pm => pm.id === i) || { image: '', name: '不明', description: '' };
         div.innerHTML = `<img src="${p.image}">`;
         div.classList.add('unlocked');
         if (i === newlyUnlockedId) {
           div.classList.add('is-new');
         }
-        div.onclick = () => openModal(p);
+        div.onclick = () => openModal(p, true);
       } else {
         div.innerText = "?";
+        // 未入手でもタップイベントを登録し、isUnlocked=falseを渡す
+        div.onclick = () => openModal(p, false);
       }
       bookGrid.appendChild(div);
     }
   }
 
-  function openModal(plant) {
-    document.getElementById('modal-img').src = plant.image;
-    document.getElementById('modal-title').innerText = plant.name;
-    document.getElementById('modal-desc').innerText = plant.description;
+  // isUnlocked 引数を追加してモーダルの表示を出し分ける
+  function openModal(plant, isUnlocked) {
+    const modalImg = document.getElementById('modal-img');
+    const placeholder = document.getElementById('modal-img-placeholder');
+    const modalTitle = document.getElementById('modal-title');
+    const modalDesc = document.getElementById('modal-desc');
+
+    if (isUnlocked) {
+      // 入手済みの場合は画像と説明を表示
+      modalImg.style.display = "inline-block";
+      placeholder.style.display = "none";
+      modalImg.src = plant.image;
+      modalTitle.innerText = plant.name;
+      modalDesc.innerText = plant.description;
+    } else {
+      // 未入手のばあいはシルエット用の「？」とヒントを表示
+      modalImg.style.display = "none";
+      placeholder.style.display = "block";
+      modalTitle.innerText = "???";
+      modalDesc.innerText = `【育成のヒント】\n${plant.hint}`;
+    }
+
     modal.style.display = "flex";
-    if (plant.id === newlyUnlockedId) {
+
+    // NEWマークを消す処理
+    if (isUnlocked && plant.id === newlyUnlockedId) {
       newlyUnlockedId = null;
       drawEncyclopedia();
     }
