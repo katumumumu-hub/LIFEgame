@@ -298,7 +298,7 @@
     }, 1000);
   });
 
-    function evolve() {
+   function evolve() {
     const stats = saveData.active_pot.time_stats;
     const avgMins = getAverageIntervalMinutes();
     const totalWaters = saveData.active_pot.total_water_count;
@@ -310,38 +310,36 @@
       if (stats[t] > maxCount) { maxTime = t; maxCount = stats[t]; }
     });
 
-    // ★追加ロジック：時間帯の「こだわり」を判定
-    // 総水やり回数の半分以上を同じ時間帯にあげていれば「こだわりあり」
-    // バラバラの時間にあげていれば「こだわりなし（any）」とする
+    // 時間帯の「こだわり」を判定
     let timePreference = "any";
     if (maxCount >= totalWaters / 2) { 
       timePreference = maxTime;
     }
 
-    // 2. 水やりの平均間隔を判定（3段階に増やします）
-    let intervalType = "short";
-    if (avgMins > 3) intervalType = "very_long"; // テスト用: 3分以上でかなり放置
-    else if (avgMins > 1) intervalType = "long";   // テスト用: 1分以上で放置気味
+    // 2. 水やりの平均間隔を判定（本番用のリアルな時間に調整）
+    // ※ avgMins は分単位なので、3時間=180分、24時間=1440分として計算します。
+    let intervalType = "short"; // デフォルトは3時間未満（こまめ）
+    
+    if (avgMins >= 1440) {
+      intervalType = "very_long"; // 24時間（1440分）以上なら「かなり放置」
+    } else if (avgMins >= 180) {
+      intervalType = "long";      // 3時間（180分）以上、24時間未満なら「放置」
+    }
 
     // 3. 10種類の完全な進化分岐ロジック
     let resultId = null;
 
     if (timePreference === "midnight") {
-      // 深夜に多くあげた場合
       resultId = 10; // ID10: 光るキノコ
     } else if (timePreference === "any") {
-      // ★時間帯がバラバラの場合（ここでID2, 7, 8が登場します）
       if (intervalType === "short") resultId = 7;          // こまめ: ハーブ
-      else if (intervalType === "long") resultId = 2;      // 放置気味: サボテン
+      else if (intervalType === "long") resultId = 2;      // 放置: サボテン
       else if (intervalType === "very_long") resultId = 8; // かなり放置: 苔玉
     } else if (timePreference === "morning") {
-      // 朝に多くあげた場合
       resultId = (intervalType === "short") ? 1 : 9; // ID1: アサガオ / ID9: 観葉植物
     } else if (timePreference === "day") {
-      // 昼に多くあげた場合
       resultId = (intervalType === "short") ? 4 : 5; // ID4: ヒマワリ / ID5: 多肉植物
     } else if (timePreference === "night") {
-      // 夜に多くあげた場合
       resultId = (intervalType === "short") ? 6 : 3; // ID6: ヨルガオ / ID3: ツキミソウ
     }
 
