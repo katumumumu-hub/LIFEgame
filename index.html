@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>植物図鑑アプリ - 全10種・エラー対策版</title>
+  <title>植物図鑑アプリ</title>
   <style>
     body {
       font-family: 'Helvetica Neue', Arial, sans-serif;
@@ -23,18 +23,6 @@
       box-sizing: border-box;
       position: relative;
     }
-
-    /* 時間表示エリア */
-    .time-display {
-      background-color: #333;
-      color: #00ff00;
-      font-family: monospace;
-      padding: 10px;
-      border-radius: 5px;
-      margin-bottom: 15px;
-      font-size: 1.2rem;
-    }
-    .info-text { font-size: 0.9rem; color: #666; margin-bottom: 5px; }
 
     /* 育成エリア */
     #pot-area {
@@ -141,9 +129,6 @@
 <body>
 
 <div id="app-container">
-  <div class="info-text">現在の現実時間</div>
-  <div id="current-time" class="time-display">00:00:00</div>
-
   <div id="pot-area">
     <img id="plant-image" src="tuti.jpg" alt="鉢" style="display: block;">
   </div>
@@ -188,7 +173,7 @@
   ];
 
   // --- セーブデータの安全な初期化 ---
-  const SAVE_KEY = 'plantAppSave_v7'; // v7に変更してエラー原因の古いデータをリセット
+  const SAVE_KEY = 'plantAppSave_v7'; 
 
   const defaultSaveData = {
     active_pot: { 
@@ -205,7 +190,6 @@
 
   try {
     const loadedData = JSON.parse(localStorage.getItem(SAVE_KEY));
-    // ロードしたデータが正しい構造かチェック（図鑑の配列が存在するか等）
     if (loadedData && loadedData.active_pot && loadedData.encyclopedia && Array.isArray(loadedData.encyclopedia.unlocked_plant_ids)) {
       saveData = loadedData;
     }
@@ -215,7 +199,6 @@
 
   let newlyUnlockedId = null;
 
-  const elCurrentTime = document.getElementById('current-time');
   const elLastWatered = document.getElementById('last-watered-time');
   const elAvgInterval = document.getElementById('avg-interval-text');
   const elGrowth = document.getElementById('growth-status');
@@ -227,13 +210,6 @@
 
   // 進化に必要な水やり回数
   const WATER_GOAL = 5; 
-
-  function updateClock() {
-    const now = new Date();
-    elCurrentTime.innerText = now.toLocaleTimeString('ja-JP', { hour12: false });
-  }
-  setInterval(updateClock, 1000);
-  updateClock();
 
   function formatTimestamp(ts) {
     if (!ts) return "なし";
@@ -269,7 +245,6 @@
       elGrowth.innerText = "種を待っています";
     }
     
-    // 図鑑の描画エラーを防ぐ
     try {
       drawEncyclopedia();
     } catch (e) {
@@ -295,6 +270,7 @@
     const now = new Date();
     const hr = now.getHours();
     
+    // 裏側の時間計算（現実時間との連動）は引き続き行われます
     if (hr >= 5 && hr < 10) saveData.active_pot.time_stats.morning++;
     else if (hr >= 10 && hr < 18) saveData.active_pot.time_stats.day++;
     else if (hr >= 18 && hr <= 23) saveData.active_pot.time_stats.night++;
@@ -357,7 +333,6 @@
 
     const plant = plant_master.find(p => p.id === resultId) || plant_master[0];
     
-    // 図鑑配列が存在しない場合のエラー防止
     if (!saveData.encyclopedia.unlocked_plant_ids) {
         saveData.encyclopedia.unlocked_plant_ids = [];
     }
@@ -382,7 +357,6 @@
   function drawEncyclopedia() {
     bookGrid.innerHTML = "";
     
-    // データ欠損時のフェイルセーフ
     const unlockedIds = saveData.encyclopedia?.unlocked_plant_ids || [];
 
     for (let i = 1; i <= 10; i++) {
