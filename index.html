@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>植物図鑑アプリ - 完全版</title>
+  <title>植物図鑑アプリ - 全10種・間隔判定対応版</title>
   <style>
     body {
       font-family: 'Helvetica Neue', Arial, sans-serif;
@@ -36,7 +36,7 @@
     }
     .info-text { font-size: 0.9rem; color: #666; margin-bottom: 5px; }
 
-    /* 育成エリア (余白を完全に排除) */
+    /* 育成エリア */
     #pot-area {
       height: 220px;
       border-radius: 15px;
@@ -45,18 +45,18 @@
       align-items: center;
       margin-bottom: 15px;
       border: 2px dashed #ccc;
-      overflow: hidden; /* エリア外にはみ出た部分を隠す */
-      padding: 0;       /* パディングを削除 */
+      overflow: hidden; 
+      padding: 0;       
     }
     #plant-image {
       width: 100%;
       height: 100%;
-      object-fit: cover; /* 画像の比率を保ったままエリア全体を埋める */
+      object-fit: cover; 
     }
 
     /* ステータスパネル */
     .status-panel { background-color: #f9f9f9; padding: 10px; border-radius: 10px; margin-bottom: 20px; text-align: left; }
-    .status-item { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding: 5px 0; }
+    .status-item { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding: 5px 0; font-size: 0.9rem; }
 
     /* ボタン */
     button { padding: 15px; font-size: 16px; border: none; border-radius: 50px; cursor: pointer; margin: 5px 0; font-weight: bold; width: 100%; transition: transform 0.1s; }
@@ -150,6 +150,7 @@
 
   <div class="status-panel">
     <div class="status-item"><span>前回の水やり:</span><span id="last-watered-time">なし</span></div>
+    <div class="status-item"><span>平均間隔:</span><span id="avg-interval-text">-</span></div>
     <div class="status-item"><span>成長具合:</span><span id="growth-status">-</span></div>
   </div>
 
@@ -172,15 +173,29 @@
 </div>
 
 <script>
-  // --- データ定義 ---
+  // --- データ定義 (全10種類) ---
   const plant_master = [
-    { id: 1, name: "朝のアサガオ", image: "plant_01.png", description: "朝にたくさん水をもらって元気に育った花。早起きのご褒美。", condition: { preferred_time: "morning" } },
-    { id: 2, name: "サボテン", image: "plant_02.png", description: "水やりの間隔が長くても、たくましく育った乾燥に強い植物。", condition: { preferred_time: "day" } },
-    { id: 3, name: "ツキミソウ", image: "plant_03.png", description: "夜遅い時間にひっそりと水を飲んで育った花。月明かりが似合う。", condition: { preferred_time: "night" } }
+    { id: 1, name: "朝のアサガオ", image: "plant_01.png", description: "朝にたくさん水をもらって元気に育った花。早起きのご褒美。" },
+    { id: 2, name: "サボテン", image: "plant_02.png", description: "水やりの間隔が長くても、たくましく育った乾燥に強い植物。" },
+    { id: 3, name: "ツキミソウ", image: "plant_03.png", description: "夜遅い時間にひっそりと水を飲んで育った花。月明かりが似合う。" },
+    { id: 4, name: "ヒマワリ", image: "plant_04.png", description: "日中にこまめに水をもらい、太陽に向かって真っすぐ育った花。" },
+    { id: 5, name: "多肉植物", image: "plant_05.png", description: "日差しを浴びつつ、たまの水やりでのんびり育ったプニプニの葉。" },
+    { id: 6, name: "ヨルガオ", image: "plant_06.png", description: "夜に何度も様子を見てもらい、暗闇で美しく花開いた。" },
+    { id: 7, name: "ハーブ", image: "plant_07.png", description: "時間帯問わず、こまめに水をもらって香りが豊かに育った。" },
+    { id: 8, name: "苔玉", image: "plant_08.png", description: "不定期な水やりでも、じっくりと時間をかけて丸く成長した。" },
+    { id: 9, name: "観葉植物", image: "plant_09.png", description: "毎朝のルーティンでたまに水をもらい、お部屋の空気をきれいにする。" },
+    { id: 10, name: "光るキノコ", image: "plant_10.png", description: "深夜に特定の条件が重なったときだけ生える、不思議でレアなキノコ。" }
   ];
 
-  let saveData = JSON.parse(localStorage.getItem('plantAppSave_v5')) || {
-    active_pot: { is_occupied: false, last_watered_at: null, total_water_count: 0, time_stats: { morning: 0, day: 0, night: 0 } },
+  // セーブデータ（v6に変更。間隔を測る total_interval_ms を追加）
+  let saveData = JSON.parse(localStorage.getItem('plantAppSave_v6')) || {
+    active_pot: { 
+      is_occupied: false, 
+      last_watered_at: null, 
+      total_water_count: 0, 
+      total_interval_ms: 0, // 前回から今回までの間隔の合計
+      time_stats: { morning: 0, day: 0, night: 0, midnight: 0 } 
+    },
     encyclopedia: { unlocked_plant_ids: [] }
   };
 
@@ -188,6 +203,7 @@
 
   const elCurrentTime = document.getElementById('current-time');
   const elLastWatered = document.getElementById('last-watered-time');
+  const elAvgInterval = document.getElementById('avg-interval-text');
   const elGrowth = document.getElementById('growth-status');
   const elImage = document.getElementById('plant-image');
   const btnWater = document.getElementById('btn-water');
@@ -210,67 +226,127 @@
     return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
   }
 
+  function getAverageIntervalMinutes() {
+    const pot = saveData.active_pot;
+    if (pot.total_water_count <= 1) return 0;
+    // ミリ秒を分に変換
+    return Math.floor((pot.total_interval_ms / (pot.total_water_count - 1)) / 1000 / 60);
+  }
+
   function updateUI() {
     const pot = saveData.active_pot;
-    
-    // 画像は常に表示(block)しておき、srcだけ切り替えます
     elImage.style.display = "block"; 
 
     if (pot.is_occupied) {
-      // 育成中：種が埋まっている画像
       elImage.src = "tanehati.PNG";
       btnWater.style.display = "block";
       btnPlant.disabled = true;
       elLastWatered.innerText = formatTimestamp(pot.last_watered_at);
       elGrowth.innerText = `水やり ${pot.total_water_count} / ${WATER_GOAL}回`;
+      
+      const avgMins = getAverageIntervalMinutes();
+      elAvgInterval.innerText = pot.total_water_count > 1 ? `約 ${avgMins} 分` : "計算中...";
     } else {
-      // 空っぽ：土だけの画像
       elImage.src = "tuti.jpg";
       btnWater.style.display = "none";
       btnPlant.disabled = false;
       elLastWatered.innerText = "なし";
+      elAvgInterval.innerText = "-";
       elGrowth.innerText = "種を待っています";
     }
     drawEncyclopedia();
-    localStorage.setItem('plantAppSave_v5', JSON.stringify(saveData));
+    localStorage.setItem('plantAppSave_v6', JSON.stringify(saveData));
   }
 
   btnPlant.addEventListener('click', () => {
-    saveData.active_pot = { is_occupied: true, last_watered_at: null, total_water_count: 0, time_stats: { morning: 0, day: 0, night: 0 } };
+    saveData.active_pot = { 
+      is_occupied: true, 
+      last_watered_at: null, 
+      total_water_count: 0, 
+      total_interval_ms: 0,
+      time_stats: { morning: 0, day: 0, night: 0, midnight: 0 } 
+    };
     updateUI();
   });
 
   btnWater.addEventListener('click', () => {
-    // 水やりボタンを押したら、すぐにジョウロ画像に切り替え
     elImage.src = "joro.PNG"; 
-
     const now = new Date();
     const hr = now.getHours();
     
+    // 時間帯の記録（深夜0-4, 朝5-9, 昼10-17, 夜18-23）
     if (hr >= 5 && hr < 10) saveData.active_pot.time_stats.morning++;
-    else if (hr >= 18 || hr < 5) saveData.active_pot.time_stats.night++;
-    else saveData.active_pot.time_stats.day++;
+    else if (hr >= 10 && hr < 18) saveData.active_pot.time_stats.day++;
+    else if (hr >= 18 && hr <= 23) saveData.active_pot.time_stats.night++;
+    else saveData.active_pot.time_stats.midnight++;
 
-    saveData.active_pot.last_watered_at = Date.now();
+    // 間隔の計算と記録
+    if (saveData.active_pot.last_watered_at) {
+      const diff = now.getTime() - saveData.active_pot.last_watered_at;
+      saveData.active_pot.total_interval_ms += diff;
+    }
+
+    saveData.active_pot.last_watered_at = now.getTime();
     saveData.active_pot.total_water_count++;
 
-    // 1秒後に画像を戻すか、進化させる
     setTimeout(() => {
       if (saveData.active_pot.total_water_count >= WATER_GOAL) {
         evolve();
       } else {
-        updateUI(); // ここで tanehati.PNG に戻ります
+        updateUI(); 
       }
     }, 1000);
   });
 
-  function evolve() {
+    function evolve() {
     const stats = saveData.active_pot.time_stats;
-    let type = "day";
-    if (stats.morning > stats.day && stats.morning > stats.night) type = "morning";
-    if (stats.night > stats.day && stats.night > stats.morning) type = "night";
+    const avgMins = getAverageIntervalMinutes();
+    const totalWaters = saveData.active_pot.total_water_count;
 
-    const plant = plant_master.find(p => p.condition.preferred_time === type) || plant_master[0];
+    // 1. 各時間帯の水やり回数を比較
+    let maxTime = "none";
+    let maxCount = 0;
+    ["morning", "day", "night", "midnight"].forEach(t => {
+      if (stats[t] > maxCount) { maxTime = t; maxCount = stats[t]; }
+    });
+
+    // ★追加ロジック：時間帯の「こだわり」を判定
+    // 総水やり回数の半分以上を同じ時間帯にあげていれば「こだわりあり」
+    // バラバラの時間にあげていれば「こだわりなし（any）」とする
+    let timePreference = "any";
+    if (maxCount >= totalWaters / 2) { 
+      timePreference = maxTime;
+    }
+
+    // 2. 水やりの平均間隔を判定（3段階に増やします）
+    let intervalType = "short";
+    if (avgMins > 3) intervalType = "very_long"; // テスト用: 3分以上でかなり放置
+    else if (avgMins > 1) intervalType = "long";   // テスト用: 1分以上で放置気味
+
+    // 3. 10種類の完全な進化分岐ロジック
+    let resultId = null;
+
+    if (timePreference === "midnight") {
+      // 深夜に多くあげた場合
+      resultId = 10; // ID10: 光るキノコ
+    } else if (timePreference === "any") {
+      // ★時間帯がバラバラの場合（ここでID2, 7, 8が登場します）
+      if (intervalType === "short") resultId = 7;          // こまめ: ハーブ
+      else if (intervalType === "long") resultId = 2;      // 放置気味: サボテン
+      else if (intervalType === "very_long") resultId = 8; // かなり放置: 苔玉
+    } else if (timePreference === "morning") {
+      // 朝に多くあげた場合
+      resultId = (intervalType === "short") ? 1 : 9; // ID1: アサガオ / ID9: 観葉植物
+    } else if (timePreference === "day") {
+      // 昼に多くあげた場合
+      resultId = (intervalType === "short") ? 4 : 5; // ID4: ヒマワリ / ID5: 多肉植物
+    } else if (timePreference === "night") {
+      // 夜に多くあげた場合
+      resultId = (intervalType === "short") ? 6 : 3; // ID6: ヨルガオ / ID3: ツキミソウ
+    }
+
+    // マスターデータから該当の植物を取得
+    const plant = plant_master.find(p => p.id === resultId) || plant_master[0]; 
     
     if (!saveData.encyclopedia.unlocked_plant_ids.includes(plant.id)) {
       saveData.encyclopedia.unlocked_plant_ids.push(plant.id);
@@ -285,9 +361,10 @@
     
     setTimeout(() => {
       alert(plant.name + " を図鑑に登録！");
-      updateUI(); // アラートを閉じた後、tuti.jpg に戻る
+      updateUI(); 
     }, 500);
   }
+
 
   function drawEncyclopedia() {
     bookGrid.innerHTML = "";
