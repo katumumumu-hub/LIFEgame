@@ -22,10 +22,10 @@
       padding: 20px;
       box-sizing: border-box;
       position: relative;
-      overflow: hidden; /* 追加: スタート画面がはみ出さないように */
+      overflow: hidden;
     }
 
-    /* --- 新規追加: スタート画面 --- */
+    /* スタート画面 */
     #start-screen {
       position: absolute;
       top: 0;
@@ -38,13 +38,13 @@
       background-color: #e8f5e9;
       display: flex;
       justify-content: center;
-      align-items: flex-end; /* ボタンを下部に配置 */
-      padding-bottom: 60px; /* 下からの余白 */
+      align-items: flex-end;
+      padding-bottom: 60px;
       box-sizing: border-box;
       z-index: 50;
     }
     #btn-start {
-      background-color: #689f38; /* イラストに合わせた自然なグリーン */
+      background-color: #689f38;
       color: white;
       width: 80%;
       max-width: 250px;
@@ -54,9 +54,9 @@
       box-shadow: 0 4px 10px rgba(0,0,0,0.2);
     }
     
-    /* --- 新規追加: メイン画面エリア --- */
+    /* メイン画面エリア */
     #main-screen {
-      display: none; /* 初期状態では非表示 */
+      display: none;
       width: 100%;
       height: 100%;
     }
@@ -159,7 +159,6 @@
     .close-btn { position: absolute; top: 10px; right: 15px; font-size: 24px; color: #999; cursor: pointer; }
     #modal-img { width: 150px; height: 150px; object-fit: contain; margin-bottom: 10px; }
     
-    /* 未入手用の「？」プレースホルダー */
     #modal-img-placeholder {
       width: 150px;
       height: 150px;
@@ -217,17 +216,36 @@
 </div>
 
 <script>
+  // --- 新規追加: 音声ファイルの読み込み設定 ---
+  const soundStart = new Audio('start.mp3');
+  const bgmMain = new Audio('ikusei.mp3');
+  bgmMain.loop = true; // BGMはループ再生
+  
+  const soundPlant = new Audio('ueru.mp3');
+  const soundWater = new Audio('joro.mp3');
+  const soundEvolve = new Audio('seityo.mp3');
+  const soundNewEvolve = new Audio('newseityo.mp3');
+
+  // 音声を最初から再生するヘルパー関数
+  function playSound(audioObj) {
+    audioObj.currentTime = 0;
+    audioObj.play().catch(e => console.log("音声再生エラー:", e));
+  }
+
   // --- 画面切り替えの処理 ---
   const startScreen = document.getElementById('start-screen');
   const mainScreen = document.getElementById('main-screen');
   const btnStart = document.getElementById('btn-start');
 
   btnStart.addEventListener('click', () => {
-    startScreen.style.display = 'none'; // スタート画面を隠す
-    mainScreen.style.display = 'block'; // メイン画面を表示する
+    playSound(soundStart); // スタートボタンの音
+    bgmMain.play().catch(e => console.log("BGM再生エラー:", e)); // BGMの再生開始
+
+    startScreen.style.display = 'none';
+    mainScreen.style.display = 'block';
   });
 
-  // --- データ定義 (全10種類 + ヒント追加) ---
+  // --- データ定義 ---
   const plant_master = [
     { id: 1, name: "朝のアサガオ", image: "plant_01.png", description: "朝にたくさん水をもらって元気に育った花。早起きのご褒美。", hint: "「朝」を中心に、「こまめに」お世話をしてみよう。" },
     { id: 2, name: "サボテン", image: "plant_02.png", description: "水やりの間隔が長くても、たくましく育った乾燥に強い植物。", hint: "時間帯はバラバラでも大丈夫。「放置気味」で育ててみよう。" },
@@ -277,7 +295,6 @@
   const bookGrid = document.getElementById('book-grid');
   const modal = document.getElementById('plant-modal');
 
-  // 進化に必要な水やり回数
   const WATER_GOAL = 5;
 
   function formatTimestamp(ts) {
@@ -318,7 +335,10 @@
     localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
   }
 
+  // 種を植える処理
   btnPlant.addEventListener('click', () => {
+    playSound(soundPlant); // 種を植える音
+
     saveData.active_pot = { 
       is_occupied: true, 
       last_watered_at: Date.now(), 
@@ -329,7 +349,10 @@
     updateUI();
   });
 
+  // 水をあげる処理
   btnWater.addEventListener('click', () => {
+    playSound(soundWater); // 水をあげる音
+
     elImage.src = "joro.PNG"; 
     const now = new Date();
     const hr = now.getHours();
@@ -400,10 +423,13 @@
         saveData.encyclopedia.unlocked_plant_ids = [];
     }
 
+    // --- 音の分岐処理 ---
     if (!saveData.encyclopedia.unlocked_plant_ids.includes(plant.id)) {
+      playSound(soundNewEvolve); // 新規入手の音
       saveData.encyclopedia.unlocked_plant_ids.push(plant.id);
       newlyUnlockedId = plant.id;
     } else {
+      playSound(soundEvolve); // 既存入手の音
       newlyUnlockedId = null;
     }
 
@@ -438,14 +464,12 @@
         div.onclick = () => openModal(p, true);
       } else {
         div.innerText = "?";
-        // 未入手でもタップイベントを登録し、isUnlocked=falseを渡す
         div.onclick = () => openModal(p, false);
       }
       bookGrid.appendChild(div);
     }
   }
 
-  // isUnlocked 引数を追加してモーダルの表示を出し分ける
   function openModal(plant, isUnlocked) {
     const modalImg = document.getElementById('modal-img');
     const placeholder = document.getElementById('modal-img-placeholder');
@@ -453,14 +477,12 @@
     const modalDesc = document.getElementById('modal-desc');
 
     if (isUnlocked) {
-      // 入手済みの場合は画像と説明を表示
       modalImg.style.display = "inline-block";
       placeholder.style.display = "none";
       modalImg.src = plant.image;
       modalTitle.innerText = plant.name;
       modalDesc.innerText = plant.description;
     } else {
-      // 未入手のばあいはシルエット用の「？」とヒントを表示
       modalImg.style.display = "none";
       placeholder.style.display = "block";
       modalTitle.innerText = "???";
@@ -469,7 +491,6 @@
 
     modal.style.display = "flex";
 
-    // NEWマークを消す処理
     if (isUnlocked && plant.id === newlyUnlockedId) {
       newlyUnlockedId = null;
       drawEncyclopedia();
