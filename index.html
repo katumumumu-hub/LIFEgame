@@ -22,6 +22,43 @@
       padding: 20px;
       box-sizing: border-box;
       position: relative;
+      overflow: hidden; /* 追加: スタート画面がはみ出さないように */
+    }
+
+    /* --- 新規追加: スタート画面 --- */
+    #start-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: url('start.jpg');
+      background-size: cover;
+      background-position: center;
+      background-color: #e8f5e9;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end; /* ボタンを下部に配置 */
+      padding-bottom: 60px; /* 下からの余白 */
+      box-sizing: border-box;
+      z-index: 50;
+    }
+    #btn-start {
+      background-color: #689f38; /* イラストに合わせた自然なグリーン */
+      color: white;
+      width: 80%;
+      max-width: 250px;
+      font-size: 1.2rem;
+      padding: 15px;
+      border: 3px solid #fff;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+    
+    /* --- 新規追加: メイン画面エリア --- */
+    #main-screen {
+      display: none; /* 初期状態では非表示 */
+      width: 100%;
+      height: 100%;
     }
 
     /* 育成エリア */
@@ -34,12 +71,12 @@
       margin-bottom: 15px;
       border: 2px dashed #ccc;
       overflow: hidden; 
-      padding: 0;       
+      padding: 0;
     }
     #plant-image {
       width: 100%;
       height: 100%;
-      object-fit: cover; 
+      object-fit: cover;
     }
 
     /* ステータスパネル */
@@ -65,7 +102,7 @@
       align-items: center;
       font-size: 10px;
       position: relative;
-      cursor: pointer; /* 未入手もタップできることを示す */
+      cursor: pointer;
     }
     .grid-item img { width: 100%; height: 100%; object-fit: cover; border-radius: 5px; }
 
@@ -143,22 +180,29 @@
 <body>
 
 <div id="app-container">
-  <div id="pot-area">
-    <img id="plant-image" src="tuti.jpg" alt="鉢" style="display: block;">
+  
+  <div id="start-screen">
+    <button id="btn-start">ゲームスタート</button>
   </div>
 
-  <div class="status-panel">
-    <div class="status-item"><span>前回の水やり:</span><span id="last-watered-time">なし</span></div>
-    <div class="status-item"><span>平均間隔:</span><span id="avg-interval-text">-</span></div>
-    <div class="status-item"><span>成長具合:</span><span id="growth-status">-</span></div>
-  </div>
+  <div id="main-screen">
+    <div id="pot-area">
+      <img id="plant-image" src="tuti.jpg" alt="鉢" style="display: block;">
+    </div>
 
-  <button id="btn-water" style="display: none;">お水をあげる 💧</button>
-  <button id="btn-plant">新しい種を植える 🌱</button>
+    <div class="status-panel">
+      <div class="status-item"><span>前回の水やり:</span><span id="last-watered-time">なし</span></div>
+      <div class="status-item"><span>平均間隔:</span><span id="avg-interval-text">-</span></div>
+      <div class="status-item"><span>成長具合:</span><span id="growth-status">-</span></div>
+    </div>
 
-  <div id="encyclopedia">
-    <h3>図鑑</h3>
-    <div class="grid" id="book-grid"></div>
+    <button id="btn-water" style="display: none;">お水をあげる 💧</button>
+    <button id="btn-plant">新しい種を植える 🌱</button>
+
+    <div id="encyclopedia">
+      <h3>図鑑</h3>
+      <div class="grid" id="book-grid"></div>
+    </div>
   </div>
 </div>
 
@@ -173,6 +217,16 @@
 </div>
 
 <script>
+  // --- 画面切り替えの処理 ---
+  const startScreen = document.getElementById('start-screen');
+  const mainScreen = document.getElementById('main-screen');
+  const btnStart = document.getElementById('btn-start');
+
+  btnStart.addEventListener('click', () => {
+    startScreen.style.display = 'none'; // スタート画面を隠す
+    mainScreen.style.display = 'block'; // メイン画面を表示する
+  });
+
   // --- データ定義 (全10種類 + ヒント追加) ---
   const plant_master = [
     { id: 1, name: "朝のアサガオ", image: "plant_01.png", description: "朝にたくさん水をもらって元気に育った花。早起きのご褒美。", hint: "「朝」を中心に、「こまめに」お世話をしてみよう。" },
@@ -224,7 +278,7 @@
   const modal = document.getElementById('plant-modal');
 
   // 進化に必要な水やり回数
-  const WATER_GOAL = 5; 
+  const WATER_GOAL = 5;
 
   function formatTimestamp(ts) {
     if (!ts) return "なし";
@@ -241,7 +295,7 @@
   function updateUI() {
     const pot = saveData.active_pot;
     elImage.style.display = "block";
-    
+
     if (pot.is_occupied) {
       elImage.src = "tanehati.PNG";
       btnWater.style.display = "block";
@@ -341,7 +395,7 @@
     }
 
     const plant = plant_master.find(p => p.id === resultId) || plant_master[0];
-    
+
     if (!saveData.encyclopedia.unlocked_plant_ids) {
         saveData.encyclopedia.unlocked_plant_ids = [];
     }
@@ -374,7 +428,7 @@
       
       const isUnlocked = unlockedIds.includes(i);
       const p = plant_master.find(pm => pm.id === i) || { image: '', name: '不明', description: '', hint: '' };
-      
+
       if (isUnlocked) {
         div.innerHTML = `<img src="${p.image}">`;
         div.classList.add('unlocked');
